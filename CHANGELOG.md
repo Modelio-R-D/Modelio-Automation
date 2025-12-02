@@ -47,20 +47,20 @@ All notable changes to this project will be documented in this file.
 - Removed explicit unmask calls for all elements
 - Added polling loop to wait for elements
 
-## [v7.0] - December 2025
+## [v7.0] - November 2025
 
 ### Added
 - Detailed reposition logging
 - Lane change detection with before/after comparison
 - `*** LANE CHANGED ***` markers in output
 
-## [v6.0] - December 2025
+## [v6.0] - November 2025
 
 ### Added
 - Lane change detection during repositioning
 - Comparison of lane bounds before and after each move
 
-## [v5.0] - December 2025
+## [v5.0] - November 2025
 
 ### Fixed
 - Read lane Y positions once before repositioning

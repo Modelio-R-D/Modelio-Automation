@@ -205,10 +205,13 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 - [Modelio](https://www.modelio.org/) - Open source modeling environment
 - [Anthropic Claude](https://www.anthropic.com/) - AI assistant used for code generation
 - Modelio development team for insights on auto-unmask behavior
+- [MATISSE](https://matisse-kdt.eu/) - Project co-funded by the European Union under the Key Digital Technologies Joint Undertaking and participating national authorities (Grant Agreement ID: 101140216)
+
+
 
 ## Version History
 
 - **v9.0** (Dec 2025) - Configurable task dimensions
 - **v8.3** (Dec 2025) - Manual unmask inside correct lane Y position
 - **v8.0** (Dec 2025) - Auto-unmask discovery and waiting mechanism
-- **v3.0** (Dec 2025) - Template with complete helper functions
+- **v3.0** (Nov 2025) - Template with complete helper functions
