@@ -217,6 +217,7 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## Version History
 
+- **v9.1** (Dec 2025) - Guards for gateway conditions
 - **v9.0** (Dec 2025) - Configurable task dimensions
 - **v8.3** (Dec 2025) - Manual unmask inside correct lane Y position
 - **v8.0** (Dec 2025) - Auto-unmask discovery and waiting mechanism

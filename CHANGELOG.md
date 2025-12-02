@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v9.1] - December 2025
+
+### Added
+- Guards for gateway conditions
+
 ## [v9.0] - December 2025
 
 ### Added
