@@ -20,13 +20,13 @@ You are helping users create BPMN process diagrams in Modelio using Jython macro
 1. **DO NOT** call `diagramHandle.unmask()` manually for initial display
 2. **DO** wait for elements to be available before repositioning
 3. **DO** check `getDiagramGraphics(element)` to verify element is ready
-4. **IF** elements are still missing after waiting → manual unmask **inside the correct lane**
+4. **IF** elements are still missing after waiting â†’ manual unmask **inside the correct lane**
 
 ### Wait Pattern:
 
 ```python
-WAIT_TIME_MS = 50           # Time between attempts (ms)
-MAX_ATTEMPTS = 3            # Maximum attempts
+WAIT_TIME_MS = 50         # Time between attempts (ms)
+MAX_ATTEMPTS = 3           # Maximum attempts
 
 def waitForElements(diagramHandle, elements):
     """Wait until all elements are available in the diagram."""
@@ -178,15 +178,34 @@ elementLayout = {
 }
 ```
 
-### 6. Sequence Flows with Labels
-```python
-# Unlabeled flow
-flows.append(createSequenceFlow(process, task1, task2, ""))
+### 6. Sequence Flows with Guards (Condition Labels)
 
-# Labeled flow (from gateway)
-flows.append(createSequenceFlow(process, gateway, task, "Yes"))
-flows.append(createSequenceFlow(process, gateway, otherTask, "No"))
+**IMPORTANT**: Labels on flows from gateways must be set as **Guards**, not names!
+
+```python
+# Regular flow (no condition needed)
+flows.append(createSequenceFlow(process, task1, task2))
+
+# Flow FROM GATEWAY - use guard parameter for condition labels
+# The guard text will appear on the arrow in the diagram
+flows.append(createSequenceFlow(process, gateway, task, guard="Yes"))
+flows.append(createSequenceFlow(process, gateway, otherTask, guard="No"))
+
+# Alternative using convenience function
+flows.append(createSequenceFlowWithGuard(process, gateway, task, "Yes"))
 ```
+
+**Why Guards?**
+- In Modelio BPMN, the "Guard" property on a sequence flow displays the condition text
+- Setting just the "name" property does NOT show the label on gateway outflows
+- Use `flow.setConditionExpression(guard)` internally
+
+**Common Guard Values**:
+- `"Yes"` / `"No"`
+- `"Approved"` / `"Rejected"`
+- `"Complete"` / `"Incomplete"`
+- `"Success"` / `"Failure"`
+- Any condition text you need
 
 ---
 
@@ -262,8 +281,8 @@ SCRIPT_VERSION = "vX.X"
 EXECUTION_ID = str(int(time.time() * 1000) % 100000)
 
 # Waiting configuration
-MAX_WAIT_SECONDS = 10
-CHECK_INTERVAL_MS = 100
+WAIT_TIME_MS = 50         # Time between attempts (ms)
+MAX_ATTEMPTS = 3           # Maximum attempts
 
 # Layout configuration  
 SPACING = 120
@@ -362,13 +381,13 @@ Process Name:   MyProcess_12345
 
 == PHASE 4: WAIT FOR AUTO-UNMASK ================================
 
-[9] Waiting for elements (max 3 attempts, 50ms interval)...
+[9] Waiting for elements (max 10 attempts, 1000ms interval)...
 
   [Attempt 1] Found: 3/9 | Missing: Task2, Task3, ...
   [Attempt 2] Found: 3/9 | Missing: Task2, Task3, ...
-  [Attempt 3] TIMEOUT - 3/9 elements
+  [Attempt 10] TIMEOUT - 3/9 elements
 
-[10] WARNING: 3/9 elements ready after 150ms
+[10] WARNING: 3/9 elements ready after 10000ms
          Missing: Task2, Task3, Task4, Task5, Task6, End
 
 [11] Trying manual unmask for missing elements...
@@ -471,7 +490,7 @@ result = diagramHandle.unmask(elem, 100, targetY)
 
 ## Version History
 
-- v8.3 (Dec 2025): Manual unmask inside correct lane Y position
+- v9 (Dec 2025): Manual unmask inside correct lane Y position
 - v8.2 (Dec 2025): Manual unmask fallback (failed - wrong Y)
 - v8.1 (Dec 2025): Detailed attempt logging
 - v8.0 (Dec 2025): Auto-unmask discovery, waiting mechanism

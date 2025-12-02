@@ -13,7 +13,9 @@
 #
 # Applicable on: Package
 #
-# Version: 3.0 - December 2025
+# Version: 4.0 - December 2025
+#   - Added guard parameter for sequence flows from gateways
+#   - Guards display condition labels (Yes/No, Approved/Rejected, etc.)
 #
 # Usage:
 #   1. Copy this template
@@ -44,8 +46,8 @@ import time
 # ============================================================================
 
 # Waiting configuration for auto-unmask
-WAIT_TIME_MS = 50           # Time to wait between attempts (milliseconds)
-MAX_ATTEMPTS = 3            # Maximum number of attempts
+WAIT_TIME_MS = 50         # Time to wait between attempts (milliseconds)
+MAX_ATTEMPTS = 3           # Maximum number of attempts
 
 # Layout configuration
 SPACING = 120               # Horizontal spacing between columns
@@ -187,14 +189,48 @@ def createParallelGateway(process, name):
 # HELPER FUNCTIONS - FLOWS
 # ============================================================================
 
-def createSequenceFlow(process, source, target, name=""):
-    """Create a BPMN Sequence Flow (arrow between elements)"""
+def createSequenceFlow(process, source, target, name="", guard=""):
+    """
+    Create a BPMN Sequence Flow (arrow between elements).
+    
+    Parameters:
+    - process: The BPMN process container
+    - source: Source element (task, gateway, event)
+    - target: Target element (task, gateway, event)
+    - name: Optional name for the flow (rarely used)
+    - guard: Condition expression displayed on flows from gateways
+             (e.g., "Yes", "No", "Approved", "Rejected")
+    
+    Note: For flows from Exclusive Gateways, use the 'guard' parameter
+    to set the condition label. This displays the text on the arrow.
+    """
     flow = modelingSession.getModel().createBpmnSequenceFlow()
     flow.setName(name)
     flow.setSourceRef(source)
     flow.setTargetRef(target)
     flow.setContainer(process)
+    
+    # Set guard condition for gateway outflows
+    if guard:
+        flow.setConditionExpression(guard)
+    
     return flow
+
+
+def createSequenceFlowWithGuard(process, source, target, guard):
+    """
+    Convenience function for creating flows from gateways with conditions.
+    
+    Parameters:
+    - process: The BPMN process container
+    - source: Source gateway
+    - target: Target element
+    - guard: Condition expression (e.g., "Yes", "No", "Approved")
+    
+    Example:
+        createSequenceFlowWithGuard(process, approvalGateway, rejectTask, "No")
+    """
+    return createSequenceFlow(process, source, target, name="", guard=guard)
 
 
 # ============================================================================
@@ -529,12 +565,18 @@ def createMyBPMN(parentPackage):
     start = createStartEvent(process, "Start")
     addToLane(start, lane1)
     
-    task1 = createUserTask(process, "Task 1")
+    task1 = createUserTask(process, "Review Request")
     addToLane(task1, lane1)
     
+    decision = createExclusiveGateway(process, "Approved?")
+    addToLane(decision, lane1)
+    
     # --- Lane 2 ---
-    task2 = createServiceTask(process, "Task 2")
+    task2 = createServiceTask(process, "Process Approval")
     addToLane(task2, lane2)
+    
+    taskReject = createUserTask(process, "Send Rejection")
+    addToLane(taskReject, lane2)
     
     end = createEndEvent(process, "End")
     addToLane(end, lane2)
@@ -544,9 +586,20 @@ def createMyBPMN(parentPackage):
     # =========================================================================
     
     flows = []
-    flows.append(createSequenceFlow(process, start, task1, ""))
-    flows.append(createSequenceFlow(process, task1, task2, ""))
-    flows.append(createSequenceFlow(process, task2, end, ""))
+    # Normal flows (no guard needed)
+    flows.append(createSequenceFlow(process, start, task1))
+    flows.append(createSequenceFlow(process, task1, decision))
+    
+    # Flows FROM GATEWAY - use guard parameter for condition labels
+    flows.append(createSequenceFlow(process, decision, task2, guard="Yes"))
+    flows.append(createSequenceFlow(process, decision, taskReject, guard="No"))
+    
+    # Alternative: use convenience function
+    # flows.append(createSequenceFlowWithGuard(process, decision, task2, "Yes"))
+    # flows.append(createSequenceFlowWithGuard(process, decision, taskReject, "No"))
+    
+    flows.append(createSequenceFlow(process, task2, end))
+    flows.append(createSequenceFlow(process, taskReject, end))
     
     # =========================================================================
     # 5. DEFINE LAYOUT
@@ -555,16 +608,18 @@ def createMyBPMN(parentPackage):
     # Format: "Element Name": (column_index, "Lane Name")
     elementLayout = {
         "Start": (0, "Lane 1"),
-        "Task 1": (1, "Lane 1"),
-        "Task 2": (2, "Lane 2"),
-        "End": (3, "Lane 2"),
+        "Review Request": (1, "Lane 1"),
+        "Approved?": (2, "Lane 1"),
+        "Process Approval": (3, "Lane 2"),
+        "Send Rejection": (3, "Lane 2"),  # Same column, different lane
+        "End": (4, "Lane 2"),
     }
     
     # =========================================================================
     # 6. CREATE DIAGRAM
     # =========================================================================
     
-    allElements = [start, task1, task2, end]
+    allElements = [start, task1, decision, task2, taskReject, end]
     
     lanesDict = {
         "Lane 1": lane1,

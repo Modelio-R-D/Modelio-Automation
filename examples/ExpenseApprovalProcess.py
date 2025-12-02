@@ -20,7 +20,7 @@
 #
 # Applicable on: Package
 #
-# Version: 9.0 - December 2025 - Configurable task width and height
+# Version: 9.1 - December 2025 - Guards for gateway conditions
 #
 
 from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
@@ -41,12 +41,12 @@ import time
 # CONFIGURATION
 # ============================================================================
 
-SCRIPT_VERSION = "v9.0"
+SCRIPT_VERSION = "v9.1"
 EXECUTION_ID = str(int(time.time() * 1000) % 100000)
 
 # Waiting configuration for auto-unmask
-WAIT_TIME_MS = 50           # Time to wait between attempts (milliseconds)
-MAX_ATTEMPTS = 3            # Maximum number of attempts
+WAIT_TIME_MS = 50         # Time to wait between attempts (milliseconds)
+MAX_ATTEMPTS = 3           # Maximum number of attempts (total max wait = 50ms * 3 = 150ms)
 
 # Layout configuration
 SPACING = 150               # Horizontal spacing between columns (increased for wider tasks)
@@ -134,13 +134,28 @@ def createExclusiveGateway(process, name):
     return gateway
 
 
-def createSequenceFlow(process, source, target, name=""):
-    """Create a BPMN Sequence Flow (arrow between elements)."""
+def createSequenceFlow(process, source, target, name="", guard=""):
+    """
+    Create a BPMN Sequence Flow (arrow between elements).
+    
+    Parameters:
+    - process: The BPMN process container
+    - source: Source element (task, gateway, event)
+    - target: Target element (task, gateway, event)
+    - name: Optional name for the flow (rarely used)
+    - guard: Condition expression displayed on flows from gateways
+             (e.g., "Yes", "No", "Approved", "Rejected")
+    """
     flow = modelingSession.getModel().createBpmnSequenceFlow()
     flow.setName(name)
     flow.setSourceRef(source)
     flow.setTargetRef(target)
     flow.setContainer(process)
+    
+    # Set guard condition for gateway outflows
+    if guard:
+        flow.setConditionExpression(guard)
+    
     return flow
 
 
@@ -640,6 +655,9 @@ def createExpenseApprovalProcess(parentPackage):
     print "== PHASE 6: CREATE FLOWS ========================================"
     print ""
     
+    # Flow definitions: (source, target, guard)
+    # Guard is the condition label shown on flows from gateways (e.g., "Yes", "No")
+    # Leave guard empty ("") for regular flows
     flowDefs = [
         # Employee initial flow
         ("Expense Incurred", "Create Expense Report", ""),
@@ -650,19 +668,19 @@ def createExpenseApprovalProcess(parentPackage):
         # Manager review
         ("Review Expense", "Check Policy Compliance", ""),
         ("Check Policy Compliance", "Approved?", ""),
-        # Manager decision
+        # Manager decision - THESE NEED GUARDS (from gateway)
         ("Approved?", "Request Revision", "Needs Revision"),
         ("Approved?", "Expense Rejected", "Rejected"),
         ("Approved?", "Approve Expense", "Approved"),
         # Revision loop
         ("Request Revision", "Revise Report", ""),
-        ("Revise Report", "Submit Report", "Resubmit"),
+        ("Revise Report", "Submit Report", ""),
         # To Finance
         ("Approve Expense", "Receive Approved Expense", ""),
         # Finance processing
         ("Receive Approved Expense", "Validate Expense Details", ""),
         ("Validate Expense Details", "Details Complete?", ""),
-        # Finance decision
+        # Finance decision - THESE NEED GUARDS (from gateway)
         ("Details Complete?", "Request More Info", "No"),
         ("Details Complete?", "Process Payment", "Yes"),
         # Info loop
@@ -674,11 +692,12 @@ def createExpenseApprovalProcess(parentPackage):
     ]
     
     flows = []
-    for srcName, tgtName, label in flowDefs:
+    for srcName, tgtName, guard in flowDefs:
         src = elementRefs.get(srcName)
         tgt = elementRefs.get(tgtName)
         if src and tgt:
-            flow = createSequenceFlow(process, src, tgt, label)
+            # Pass guard as keyword argument
+            flow = createSequenceFlow(process, src, tgt, guard=guard)
             flows.append(flow)
         else:
             print "[" + str(step()) + "] WARNING: Missing element for flow " + srcName + " -> " + tgtName
