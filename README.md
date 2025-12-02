@@ -1,4 +1,4 @@
-# Modelio BPMN Generator with Claude AI
+# Modelio BPMN Generator with Claude or ChatGPT AI
 
 Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https://www.modelio.org/) using Claude AI. This project provides templates, instructions, and examples for creating professional BPMN process diagrams through natural language conversations with Claude.
 
@@ -8,7 +8,7 @@ Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https:
 
 This project enables you to:
 
-- **Describe a business process in plain language** and have Claude generate the Modelio macro
+- **Describe a business process in plain language** and have Claude or ChatGPT generate the Modelio macro
 - **Automatically create BPMN diagrams** with lanes, tasks, gateways, and flows
 - **Customize layout** with configurable spacing, task dimensions, and positioning
 
@@ -24,13 +24,17 @@ This project enables you to:
 ## Requirements
 
 - [Modelio](https://www.modelio.org/) 5.0 or later
-- Access to [Claude](https://claude.ai/) (Anthropic's AI assistant)
+- Access to [Claude](https://claude.ai/) or [ChatGPT](https://chat.openai.com/) with GPT-4o (for macro generation)
 
 ## Quick Start
 
-### 1. Set Up Claude
+### 1. Set Up Claude or ChatGPT
 
-Copy the contents of [`CLAUDE_INSTRUCTIONS.md`](CLAUDE_INSTRUCTIONS.md) into a Claude Project as custom instructions. This teaches Claude how to generate proper Modelio BPMN macros.
+Copy the contents of [`CLAUDE_INSTRUCTIONS.md`](CLAUDE_INSTRUCTIONS.md) into either:
+
+- **Claude**: A Project's custom instructions (original format is written for Claude).
+- **ChatGPT**: The Custom instructions or first system message for a GPT-4o chat. No edits are needed; the prompt works as-is. Suggested starter message for ChatGPT:
+  - "You are generating Modelio Jython BPMN macros. Follow these instructions exactly and reply with the full Python script only."
 
 ### 2. Describe Your Process
 
