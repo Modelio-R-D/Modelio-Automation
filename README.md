@@ -24,7 +24,8 @@ This project enables you to:
 ## Requirements
 
 - [Modelio](https://www.modelio.org/) 5.0 or later
-- Access to [Claude](https://claude.ai/), [ChatGPT](https://chat.openai.com/) with GPT-4o, or [Gemini](https://gemini.google.com/) (for macro generation)
+- Access to [Claude](https://claude.ai/), [ChatGPT](https://chat.openai.com/) with GPT-4o, or [Gemini](https://gemini.google.com/) (for macro generation). 
+- Also works with Qwen via LM Studio—see the guide [here](lm_studio/LMStudio_Qwen_Guide_v5_Final.md).
 
 ## Quick Start
 
@@ -35,6 +36,7 @@ Copy the contents of [`CLAUDE_INSTRUCTIONS.md`](CLAUDE_INSTRUCTIONS.md) into eit
 - **Claude**: A Project's custom instructions (original format is written for Claude).
 - **ChatGPT**: The Custom instructions or first system message for a GPT-4o chat. No edits are needed; the prompt works as-is.
 - **Gemini**: A new chat as the system/developer message or custom instructions. No edits are needed; the prompt works as-is.
+- **LM Studio + Qwen**: Use the dedicated setup and prompt in [`lm_studio/LMStudio_Qwen_Guide_v5_Final.md`](lm_studio/LMStudio_Qwen_Guide_v5_Final.md).
 
 Suggested starter message (ChatGPT or Gemini): "You are generating Modelio Jython BPMN macros. Follow these instructions exactly and reply with the full Python script only."
 
