@@ -1,130 +1,212 @@
 # Quick Start Guide
 
-This guide will help you create your first BPMN diagram using Claude AI and Modelio.
+Create your first BPMN diagram using AI and Modelio in under 10 minutes.
 
 ## Prerequisites
 
-1. **Modelio 5.0+** installed ([download here](https://www.modelio.org/downloads.html))
-2. Access to **Claude** ([claude.ai](https://claude.ai/)) or other LLMs
+- **Modelio 5.0+** installed ([download](https://www.modelio.org/downloads.html))
+- Access to **Claude** ([claude.ai](https://claude.ai)) or another AI assistant
 
-## Step 1: Set Up Claude Project
+---
 
-1. Go to [claude.ai](https://claude.ai/)
-2. Create a new **Project** (click "Projects" in the sidebar)
-3. In project settings, add **Files**
-4. Add  [`CLAUDE_INSTRUCTIONS.md`](../CLAUDE_INSTRUCTIONS.md) and [`BPMN_Helpers.py`](../BPMN_Helpers.py)
+## Step 1: Set Up Your AI Assistant
 
-In other LLMs, follow similar approach by adding instrucitons and helpers to the project files or directly to the chat as an attachement.
+### Option A: Claude Projects (Recommended)
 
+1. Go to [claude.ai](https://claude.ai) and click **Projects** in the sidebar
+2. Create a new project (e.g., "Modelio BPMN")
+3. In project settings, click **Add files**
+4. Upload these two files from this repository:
+   - [`CLAUDE_INSTRUCTIONS.md`](../CLAUDE_INSTRUCTIONS.md)
+   - [`BPMN_Helpers.py`](../BPMN_Helpers.py)
 
-## Step 2: Describe Your Process
+### Option B: Other AI Assistants
 
-Start a conversation with Claude in your project. Describe your business process in natural language:
+Attach the same files to your conversation or paste their contents as context.
+
+---
+
+## Step 2: Install the Helper Library (One Time)
+
+Copy [`BPMN_Helpers.py`](../BPMN_Helpers.py) to your Modelio macros folder:
+
+| OS | Path |
+|----|------|
+| Windows (workaround) | `C:\<your Modelio installation folder>\.modelio\5.4\macros\BPMN_Helpers.py` |
+| Linux | `~/.modelio/5.4/macros/BPMN_Helpers.py` |
+
+> **Note**: Replace `5.4` with your Modelio version. Create the `macros` folder if it doesn't exist.
+
+---
+
+## Step 3: Describe Your Process to Claude
+
+Start a conversation in your Claude project and describe your business process:
 
 ```
-Create a BPMN diagram for a simple order fulfillment process:
+Create a BPMN diagram for an order fulfillment process:
 
 Lanes:
 - Customer
-- Sales
+- Sales  
 - Warehouse
 
 Process:
 1. Customer places an order
 2. Sales receives and validates the order
-3. If valid, Sales confirms the order
-4. Warehouse picks and ships the items
-5. Customer receives the delivery
-
-Include appropriate gateways for the validation decision.
+3. If valid, Sales confirms; if invalid, Sales rejects
+4. Warehouse picks and ships items
+5. Customer receives delivery
 ```
 
-## Step 3: Get the Generated Macro
+Claude will generate a complete Modelio macro based on your description.
 
-Claude will generate a complete Python macro for Modelio. The output will look something like:
+---
 
-```python
-#
-# OrderFulfillmentProcess.py
-#
-# Description: BPMN process for order fulfillment
-# Applicable on: Package
-#
+## Step 4: Run the Macro in Modelio
 
-from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
-# ... rest of imports and code
-```
+1. **Copy** the generated script from Claude
+2. Open **Modelio** and open/create a project
+3. **Right-click a Package** in the model explorer
+   - If you don't have one: Right-click root → Create element → Package
+4. Go to **Views → Script** to open the Script view
+5. **Paste** the script
+6. Click **Run** (play button)
 
-## Step 4: Run in Modelio
-
-1. **Copy** [`BPMN_Helpers.py`](../BPMN_Helpers.py) to  `.modelio/5.4/macros/BPMN_Helpers.py`
-2. **Copy** the entire generated script
-2. Open **Modelio**
-3. Create or open a project
-4. **Select a Package** in the model explorer (right-click > Create > Package if needed)
-5. Go to **Views > Script** 
-6. **Paste** the script
-7. Click **Run**
+---
 
 ## Step 5: View Your Diagram
 
-1. In the model explorer, expand your package
-2. Find the newly created process (e.g., "OrderFulfillment_12345")
-3. Double-click the diagram to open it
-4. You should see your BPMN diagram with all lanes, elements, and flows!
+1. Expand your package in the model explorer
+2. Find the new process (named like `OrderFulfillment_12345`)
+3. Double-click the process diagram to open it
+4. Your BPMN diagram is ready!
 
-## Customizing the Output
+---
 
-### Change Element Sizes
+## Customization
 
-Edit the configuration at the top of the generated script:
+### Adjust Element Sizes
 
-```python
-TASK_WIDTH = 120    # Make tasks wider
-TASK_HEIGHT = 60    # Make tasks taller
-SPACING = 150       # More space between elements
-```
-
-### Adjust Layout
-
-Modify the `elementLayout` dictionary to change column positions:
+Edit the configuration section in generated scripts:
 
 ```python
-elementLayout = {
-    "Place Order": (0, "Customer"),      # Column 0
-    "Receive Order": (1, "Sales"),       # Column 1
-    "Validate Order": (2, "Sales"),      # Column 2
+CONFIG = {
+    "TASK_WIDTH": 140,   # Wider tasks for longer labels
+    "TASK_HEIGHT": 70,   # Taller tasks
+    "SPACING": 180,      # More horizontal space
     # ...
 }
 ```
 
+### Change Element Positions
+
+Modify column indices in the `layout` section:
+
+```python
+"layout": {
+    "Place Order": 0,        # First column
+    "Validate Order": 1,     # Second column
+    "Ship Items": 3,         # Skip column 2 for visual spacing
+}
+```
+
+---
+
 ## Troubleshooting
 
-### Script doesn't run
-- Make sure you've selected a **Package** before running
-- Check the Modelio console for error messages
+| Problem | Solution |
+|---------|----------|
+| "No such file" error | Check that `BPMN_Helpers.py` path matches your Modelio version |
+| Script doesn't run | Make sure you selected a **Package** before running |
+| Diagram is empty | Wait a moment and refresh; check the model tree for the process |
+| Elements overlap | Adjust column indices in the `layout` section |
+| Unicode/encoding errors | Ensure script uses only ASCII characters |
+| Text cut off | Increase `TASK_WIDTH` and `TASK_HEIGHT` |
 
-### Elements not visible
-- The script handles this automatically with manual unmask fallback
-- Check the console output for `[Unmask]` messages
+### Check the Console
 
-### Text is cut off
-- Increase `TASK_WIDTH` and `TASK_HEIGHT` in the configuration
-- Increase `SPACING` if elements overlap
+The script outputs diagnostic information. Go to **Views → Console** to see:
 
-### Unicode errors
-- Ensure the script uses only ASCII characters
-- Avoid special characters like arrows (→) or boxes (▭) in print statements
+```
+==================================================================
+BPMN PROCESS CREATION
+==================================================================
+Process Name: OrderFulfillment_12345
+...
+[3] Customer: 2 elements
+[4] Sales: 3 elements
+...
+```
+
+---
+
+## Tips for Better AI Results
+
+| Tip | Example |
+|-----|---------|
+| Name your lanes clearly | "Lanes: Customer, Sales Team, Warehouse Staff" |
+| Describe decisions explicitly | "If order is valid, confirm it; otherwise reject it" |
+| Mention parallel work | "While Warehouse picks items, Sales notifies customer" |
+| Specify task types | "automated email notification" → Service Task |
+| Include error handling | "If shipping fails, notify Sales" |
+
+---
+
+## Example Prompts
+
+### Simple Approval
+
+```
+Create a document approval process with:
+- Lanes: Author, Reviewer, Manager
+- Author submits document
+- Reviewer checks it
+- If OK, Manager approves; if not, Author revises
+```
+
+### Parallel Processing
+
+```
+Create an employee onboarding process:
+- Lanes: HR, IT, New Employee
+- HR and IT work in parallel after employee is hired
+- HR handles paperwork while IT sets up accounts
+- New Employee completes orientation after both finish
+```
+
+### Complex Flow with Loops
+
+```
+Create a customer support ticket process:
+- Lanes: Customer, Agent, Specialist
+- Customer submits ticket
+- Agent triages: simple issues handled directly, complex go to Specialist
+- If customer not satisfied, reopen ticket
+- Track resolution with a final confirmation
+```
+
+---
 
 ## Next Steps
 
-- Check out the [ExpenseApprovalProcess.py](../examples/ExpenseApprovalProcess.py) for a complete example
-- Review [CLAUDE_INSTRUCTIONS.md](../CLAUDE_INSTRUCTIONS.md) for the full list of supported elements
+- See [`examples/`](../examples/) for complete working macros
+- Read [`CLAUDE_INSTRUCTIONS.md`](../CLAUDE_INSTRUCTIONS.md) for all supported BPMN elements
+- Check [`API_REFERENCE.md`](API_REFERENCE.md) for configuration options
 
-## Tips for Better Results
+---
 
-1. **Be specific** about lane names and their roles
-2. **Describe decisions** clearly (e.g., "if approved" → Exclusive Gateway)
-3. **Mention parallel activities** for Parallel Gateways
-4. **Include error paths** and exception handling
-5. **Name your elements** descriptively (Claude will use these names)
+## Quick Reference: Element Types
+
+| Type | Use For |
+|------|---------|
+| `START` | Process begins |
+| `END` | Process ends |
+| `USER_TASK` | Human work with IT system |
+| `SERVICE_TASK` | Automated/system task |
+| `MANUAL_TASK` | Physical work without IT |
+| `EXCLUSIVE_GW` | XOR decision (one path) |
+| `PARALLEL_GW` | Fork/join (all paths) |
+| `MESSAGE_START` | Triggered by message |
+| `MESSAGE_END` | Sends message on completion |
+| `TIMER_START` | Triggered by schedule |

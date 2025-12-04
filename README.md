@@ -1,0 +1,304 @@
+# Modelio BPMN Generator with Claude, ChatGPT, or Gemini AI
+
+Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https://www.modelio.org/) using AI. Describe your business process in plain language and get a complete, runnable Modelio macro.
+
+![BPMN Example](docs/images/expense-approval-example.png)
+
+## Overview
+
+This project enables you to:
+
+- **Describe a business process in plain language** and have Claude, ChatGPT, or Gemini generate the Modelio macro
+- **Automatically create BPMN diagrams** with lanes, tasks, gateways, and flows
+- **Customize layout** with configurable spacing, task dimensions, and positioning
+
+## Features
+
+- ✅ Support for all common BPMN elements (Start/End Events, User/Service/Manual Tasks, Gateways)
+- ✅ Automatic swim lane creation and element positioning
+- ✅ Sequence flows with labels for gateway decisions
+- ✅ Configurable task dimensions and spacing
+- ✅ Robust element unmasking with fallback mechanisms
+- ✅ Two-file architecture for faster, more reliable AI generation
+
+## Requirements
+
+- [Modelio](https://www.modelio.org/) 5.0 or later
+- Access to [Claude](https://claude.ai/), [ChatGPT](https://chat.openai.com/) with GPT-4o, or [Gemini](https://gemini.google.com/)
+- Also works with Qwen via LM Studio—see the guide [here](lm_studio/LMStudio_Qwen_Guide_v5_Final.md)
+
+---
+
+## Quick Start
+
+### 1. Install the Helper Library (One Time)
+
+Copy [`BPMN_Helpers.py`](BPMN_Helpers.py) to your Modelio macros folder:
+
+| OS | Path |
+|----|------|
+| Windows (workaround) | `C:\<your Modelio installation folder>\.modelio\5.4\macros\BPMN_Helpers.py` |
+| Linux | `~/.modelio/5.4/macros/BPMN_Helpers.py` |
+
+> Replace `5.4` with your Modelio version. Create the `macros` folder if it doesn't exist.
+
+### 2. Set Up Your AI Assistant
+
+Copy the contents of [`CLAUDE_INSTRUCTIONS.md`](CLAUDE_INSTRUCTIONS.md) into:
+
+| AI | How to Set Up |
+|----|---------------|
+| **Claude** | Create a Project → Add as custom instructions |
+| **ChatGPT** | Add to Custom Instructions or first system message |
+| **Gemini** | Add as system/developer message |
+| **LM Studio + Qwen** | See [`lm_studio/LMStudio_Qwen_with_helpers.md`](lm_studio/LMStudio_Qwen_with_helpers.md) |
+
+**Tip for ChatGPT/Gemini:** Start with: *"You are generating Modelio Jython BPMN macros. Follow these instructions exactly."*
+
+### 3. Describe Your Process
+
+Tell the AI what you need:
+
+```
+Create a BPMN diagram for an expense approval process with 3 lanes: 
+Employee, Manager, and Finance. 
+
+The employee submits an expense report, the manager reviews and 
+approves or rejects it, and finance processes the payment.
+```
+
+### 4. Run in Modelio
+
+1. Copy the generated Python script
+2. Open Modelio and select a **Package** in the model explorer
+3. Go to **Views → Script**
+4. Paste the script and click **Run**
+
+Your BPMN diagram will appear automatically!
+
+---
+
+## Project Structure
+
+```
+Modelio-Automation/
+├── README.md                 # This file
+├── BPMN_Helpers.py           # Helper library (install to Modelio)
+├── CLAUDE_INSTRUCTIONS.md    # AI instructions for macro generation
+├── docs/
+│   ├── QUICK_START.md        # Detailed setup guide
+│   ├── API_REFERENCE.md      # Configuration options
+│   ├── APPROACHES.md         # Architecture comparison
+│   └── images/
+├── examples/
+│   └── ExpenseApprovalProcess.py
+└── lm_studio/
+    └── LMStudio_Qwen_Guide_with_helpers.md
+```
+
+---
+
+## How It Works
+
+### Two-File Architecture
+
+```
+┌────────────────────────────────┐
+│  BPMN_Helpers.py               │  ← Install once in Modelio
+│  (500+ lines of tested code)   │
+└────────────────────────────────┘
+              ▲
+              │ execfile()
+              │
+┌────────────────────────────────┐
+│  YourProcess.py                │  ← AI generates this (~100 lines)
+│  (Pure configuration)          │
+└────────────────────────────────┘
+```
+
+**Benefits:**
+- ⚡ **Fast generation** - AI only generates configuration, not 500+ lines of helpers
+- ✅ **Reliable** - Helper code is tested; only config varies
+- 🔧 **Maintainable** - Fix bugs once in helper library
+- 📖 **Readable** - Process structure is clear and declarative
+
+### Generated Configuration Format
+
+```python
+CONFIG = {
+    "name": "ExpenseApproval",
+    "lanes": ["Employee", "Manager", "Finance"],
+    "elements": [
+        ("Submit Expense", START, "Employee"),
+        ("Review", USER_TASK, "Manager"),
+        ("Approved?", EXCLUSIVE_GW, "Manager"),
+        ("Process Payment", SERVICE_TASK, "Finance"),
+        # ...
+    ],
+    "flows": [
+        ("Submit Expense", "Review", ""),
+        ("Approved?", "Process Payment", "Yes"),
+        ("Approved?", "Rejected", "No"),
+    ],
+    "layout": {
+        "Submit Expense": 0,
+        "Review": 1,
+        "Approved?": 2,
+        # ...
+    },
+}
+```
+
+### Modelio Auto-Unmask Behavior
+
+When a BPMN diagram is created, Modelio automatically "unmasks" elements. However:
+
+- Auto-unmask is **non-deterministic** - sometimes all elements appear, sometimes only some
+- The helper library handles this with automatic fallback to manual unmasking
+- Manual unmask is done at the correct Y position inside each lane
+
+---
+
+## Available BPMN Elements
+
+| Type | Constant | Icon | Description |
+|------|----------|------|-------------|
+| Start Event | `START` | ○ | Process start (green circle) |
+| End Event | `END` | ◉ | Process end (red circle) |
+| Message Start | `MESSAGE_START` | ✉○ | Triggered by message |
+| Message End | `MESSAGE_END` | ✉◉ | Sends message on completion |
+| Timer Start | `TIMER_START` | ⏱○ | Triggered by schedule |
+| User Task | `USER_TASK` | 👤▭ | Human activity with IT system |
+| Manual Task | `MANUAL_TASK` | ✋▭ | Physical task without IT |
+| Service Task | `SERVICE_TASK` | ⚙▭ | Automated/system task |
+| Exclusive Gateway | `EXCLUSIVE_GW` | ◇ | XOR decision (one path) |
+| Parallel Gateway | `PARALLEL_GW` | ⊕ | AND split/join (all paths) |
+
+---
+
+## Configuration Options
+
+```python
+CONFIG = {
+    # Required
+    "name": "ProcessName",
+    "lanes": [...],
+    "elements": [...],
+    "flows": [...],
+    "layout": {...},
+    
+    # Optional (with defaults)
+    "SPACING": 150,        # Horizontal spacing between columns
+    "START_X": 80,         # Starting X position
+    "TASK_WIDTH": 120,     # Width for task elements
+    "TASK_HEIGHT": 60,     # Height for task elements
+    "WAIT_TIME_MS": 50,    # Time between unmask attempts
+    "MAX_ATTEMPTS": 3,     # Maximum unmask attempts
+}
+```
+
+---
+
+## Example Output
+
+Running the ExpenseApprovalProcess example produces:
+
+```
+==================================================================
+BPMN PROCESS CREATION
+==================================================================
+Process Name: ExpenseApproval_83950
+
+== PHASE 1: CREATE PROCESS & LANES ==============================
+[1] Process: ExpenseApproval_83950
+[2] Lanes: Employee, Manager, Finance
+
+== PHASE 2: CREATE ELEMENTS =====================================
+[3] Employee: 7 elements
+[4] Manager: 5 elements
+[5] Finance: 7 elements
+  Total: 19 elements
+
+== PHASE 4: WAIT FOR AUTO-UNMASK ================================
+  [Attempt 1] Found: 7/19 | Missing: Review Expense...
+  [Unmask] Review Expense -> Y=161 (Manager): OK
+  ...
+
+== PHASE 5: REPOSITION ELEMENTS =================================
+  Repositioned: 19/19
+
+== PHASE 6: CREATE FLOWS ========================================
+  Created 20 sequence flows
+
+==================================================================
+COMPLETE
+==================================================================
+```
+
+---
+
+## Tips for Better AI Results
+
+| Tip | Example |
+|-----|---------|
+| Name lanes clearly | "Lanes: Customer, Sales Team, Warehouse" |
+| Describe decisions explicitly | "If approved, proceed; otherwise reject" |
+| Mention parallel work | "HR and IT work in parallel" |
+| Specify task types | "automated email" → Service Task |
+| Include error paths | "If validation fails, return to customer" |
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| "No such file" error | Check `BPMN_Helpers.py` path matches your Modelio version |
+| Script doesn't run | Select a **Package** before running |
+| UnicodeDecodeError | Use ASCII only - no special characters like ✓ or → |
+| Element in wrong lane | Check lane name spelling (case-sensitive) |
+| Elements overlap | Increase `SPACING` or adjust column indices in layout |
+| Text doesn't fit | Increase `TASK_WIDTH` and `TASK_HEIGHT` |
+| Diagram is empty | Wait and refresh; check model tree for the process |
+
+---
+
+## Documentation
+
+- [Quick Start Guide](docs/QUICK_START.md) - Detailed setup walkthrough
+- [API Reference](docs/API_REFERENCE.md) - All configuration options
+- [Approaches Comparison](docs/APPROACHES.md) - Architecture details
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+---
+
+## Acknowledgments
+
+- [Modelio](https://www.modelio.org/) - Open source modeling environment
+- [Anthropic Claude](https://www.anthropic.com/) - AI assistant for code generation
+- Modelio development team for insights on auto-unmask behavior
+- [MATISSE](https://matisse-kdt.eu/) - Project co-funded by the European Union under the Key Digital Technologies Joint Undertaking and participating national authorities (Grant Agreement ID: 101140216)
+
+---
+
+## Version History
+
+- **v2.0** (Dec 2025) - Two-file architecture with helper library
+- **v1.0** (Dec 2025) - Single-file approach with inline helpers
+
+### Previous Single-File Versions
+- v0.9.1 - Guards for gateway conditions
+- v0.9.0 - Configurable task dimensions
+- v0.8.3 - Manual unmask inside correct lane Y position
+- v0.8.0 - Auto-unmask discovery and waiting mechanism
+
+---
+
+## License
+
+Apache License 2.0 - See [LICENSE](LICENSE)

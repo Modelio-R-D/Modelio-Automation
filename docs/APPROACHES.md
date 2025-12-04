@@ -7,7 +7,7 @@ This document compares two approaches for generating BPMN diagrams in Modelio us
 | Aspect | Single-File Approach (v1) | Two-File Approach (current) |
 |--------|---------------------|------------------------|
 | Files | 1 (everything inline) | 2 (helpers + config) |
-| Lines of code | 500-700+ per script | ~50-100 per script |
+| Lines of code | 500-700+ per script | ~50-100 per config script |
 | Setup | None | Copy helper library once |
 | AI generation | Slower, error-prone | Fast, reliable |
 | Maintenance | Edit each file | Fix helpers once |
@@ -73,9 +73,9 @@ if (selectedElements.size > 0):
 
 ### How It Works
 
-Helper functions live in a shared library (`BPMN_Helpers_v2.py`). Each process script is pure configuration that loads the helpers via `execfile()`.
+Helper functions live in a shared library (`BPMN_Helpers.py`). Each process script is pure configuration that loads the helpers via `execfile()`.
 
-**File 1: BPMN_Helpers_v2.py** (placed in macros folder once)
+**File 1: BPMN_Helpers.py** (placed in macros folder once)
 ```python
 # Reusable helper library - 500+ lines
 # Element creation, diagram handling, positioning, etc.
@@ -162,7 +162,7 @@ The two-file approach is significantly more reliable for AI-assisted generation.
 | Approach | Fix Required |
 |----------|-------------|
 | Single-file | Edit every process file (10+ files) |
-| Two-file | Edit BPMN_Helpers_v2.py once |
+| Two-file | Edit BPMN_Helpers.py once |
 
 ### Learning Curve
 
