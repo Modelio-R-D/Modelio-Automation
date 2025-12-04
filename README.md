@@ -1,4 +1,4 @@
-# Modelio BPMN Generator with Claude, ChatGPT, or Gemini AI
+# Modelio BPMN Generator with Claude, ChatGPT, Gemini AI or Local LLM
 
 Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https://www.modelio.org/) using AI. Describe your business process in plain language and get a complete, runnable Modelio macro.
 

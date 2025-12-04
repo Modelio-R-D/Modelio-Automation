@@ -1,4 +1,4 @@
-*#
+#
 # ExpenseApproval_Generated.py
 #
 # Description:
