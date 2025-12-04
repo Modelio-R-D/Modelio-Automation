@@ -2,7 +2,7 @@
 
 Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https://www.modelio.org/) using Claude AI. This project provides templates, instructions, and examples for creating professional BPMN process diagrams through natural language conversations with Claude.
 
-![BPMN Example](docs/images/expense-approval-example.png)
+![BPMN Example](../docs/images/expense-approval-example.png)
 
 ## Overview
 
