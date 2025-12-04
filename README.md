@@ -92,8 +92,9 @@ Modelio-Automation/
 │   └── images/
 ├── examples/
 │   └── ExpenseApprovalProcess.py
-└── lm_studio/
-    └── LMStudio_Qwen_Guide_with_helpers.md
+├── lm_studio/
+│    └── LMStudio_Qwen_Guide_with_helpers.md
+└── v1/                       # Previous single-file version with examples
 ```
 
 ---
