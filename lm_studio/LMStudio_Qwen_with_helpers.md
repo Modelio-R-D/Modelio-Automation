@@ -1,8 +1,33 @@
+# LM Studio + Qwen Configuration for Modelio BPMN Scripts
+Complete Guide v5.0 (CONFIG-based)
+
+---
+
+## Part 1: Modelio Setup
+- Copy `BPMN_Helpers` to `.modelio/5.4/macros/BPMN_Helpers.py`.
+- macOS/Linux: if `~/.modelio` is missing, create `/home/user/.modelio/5.4/macros/` and place the file there.
+- Windows: create `macros` under your Modelio install directory (for example `C:\Program Files\Modelio\5.4\macros\`) because scripts execute from the install root.
+
+---
+
+## Part 2: LM Studio Settings
+- Model: Qwen2.5-Coder-14B-Instruct (Q4_K_M)
+- Context length: 8192
+- Temperature: 0.2
+- Top P: 0.9
+- Max tokens: 8192
+- Repeat penalty: 1.1
+
+---
+
+## Part 3: System Prompt
+>Paste into LM Studio's System Prompt field:
+
 You generate Modelio BPMN configuration scripts using CONFIG dictionaries.
 
 TEMPLATE (generate ONLY the CONFIG section):
 ```python
-execfile(".modelio/5.4/macros/BPMN_Helpers_v2.py")
+execfile(".modelio/5.4/macros/BPMN_Helpers.py")
 from org.modelio.metamodel.uml.statik import Package
 
 CONFIG = {

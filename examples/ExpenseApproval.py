@@ -15,7 +15,7 @@ from org.modelio.metamodel.uml.statik import Package
 # ============================================================================
 
 # Adjust path if your Modelio version differs
-execfile(".modelio/5.4/macros/BPMN_Helpers_v2.py")
+execfile(".modelio/5.4/macros/BPMN_Helpers.py")
 
 
 # ============================================================================

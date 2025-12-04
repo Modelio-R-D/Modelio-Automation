@@ -5,15 +5,17 @@ This guide will help you create your first BPMN diagram using Claude AI and Mode
 ## Prerequisites
 
 1. **Modelio 5.0+** installed ([download here](https://www.modelio.org/downloads.html))
-2. Access to **Claude** ([claude.ai](https://claude.ai/))
+2. Access to **Claude** ([claude.ai](https://claude.ai/)) or other LLMs
 
 ## Step 1: Set Up Claude Project
 
 1. Go to [claude.ai](https://claude.ai/)
 2. Create a new **Project** (click "Projects" in the sidebar)
-3. In project settings, add **Custom Instructions**
-4. Copy the entire contents of [`CLAUDE_INSTRUCTIONS.md`](../CLAUDE_INSTRUCTIONS.md) into the custom instructions
-5. Save the project
+3. In project settings, add **Files**
+4. Add  [`CLAUDE_INSTRUCTIONS.md`](../CLAUDE_INSTRUCTIONS.md) and [`BPMN_Helpers.py`](../BPMN_Helpers.py)
+
+In other LLMs, follow similar approach by adding instrucitons and helpers to the project files or directly to the chat as an attachement.
+
 
 ## Step 2: Describe Your Process
 
@@ -55,11 +57,12 @@ from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
 
 ## Step 4: Run in Modelio
 
-1. **Copy** the entire generated script
+1. **Copy** [`BPMN_Helpers.py`](../BPMN_Helpers.py) to  `.modelio/5.4/macros/BPMN_Helpers.py`
+2. **Copy** the entire generated script
 2. Open **Modelio**
 3. Create or open a project
 4. **Select a Package** in the model explorer (right-click > Create > Package if needed)
-5. Go to **Script > Run Script** (or press the script button)
+5. Go to **Views > Script** 
 6. **Paste** the script
 7. Click **Run**
 
@@ -116,7 +119,6 @@ elementLayout = {
 ## Next Steps
 
 - Check out the [ExpenseApprovalProcess.py](../examples/ExpenseApprovalProcess.py) for a complete example
-- Read the [BPMN_Template.py](../templates/BPMN_Template.py) to understand all available functions
 - Review [CLAUDE_INSTRUCTIONS.md](../CLAUDE_INSTRUCTIONS.md) for the full list of supported elements
 
 ## Tips for Better Results
