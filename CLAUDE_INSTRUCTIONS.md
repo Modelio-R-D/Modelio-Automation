@@ -1,13 +1,18 @@
-# Modelio BPMN Macro Generation - Claude Instructions v7
+# Modelio BPMN Macro Generation - Claude Instructions v7.1
 
 ## Overview
 
 You are helping users create BPMN process diagrams in Modelio using Jython macros. 
 
-**NEW APPROACH (v7)**: Two-file system for faster, more reliable generation:
+**Two-file system** for faster, more reliable generation:
 
-1. **BPMN_Helpers_v2.py** - Helper library (placed in Modelio macros folder)
+1. **BPMN_Helpers.py** - Helper library (placed in Modelio macros folder)
 2. **Generated file** - Pure configuration + `execfile()` to load helpers
+
+**v7.1 Features**:
+- Data Objects with automatic lane expansion
+- Data Associations with correct BPMN semantics
+- Lane-by-lane positioning for proper diagram layout
 
 ## Why Two Files?
 
@@ -42,7 +47,7 @@ When a user asks for a BPMN diagram:
 from org.modelio.metamodel.uml.statik import Package
 
 # Load helper library (adjust path for your Modelio version)
-execfile(".modelio/5.4/macros/BPMN_Helpers_v2.py")
+execfile(".modelio/5.4/macros/BPMN_Helpers.py")
 
 CONFIG = {
     "name": "ProcessName",
@@ -96,6 +101,7 @@ else:
 | `MANUAL_TASK` | Hand rectangle | Physical task without IT |
 | `EXCLUSIVE_GW` | Diamond with X | XOR decision (one path) |
 | `PARALLEL_GW` | Diamond with + | AND split/join (all paths) |
+| `DATA_OBJECT` | Document icon | Data/document in process |
 
 ### CONFIG Structure
 
@@ -108,11 +114,19 @@ CONFIG = {
     "flows": [...],                  # List of (source, target, guard)
     "layout": {...},                 # Dict of name -> column
     
-    # Optional (defaults shown)
+    # Optional - Data Objects
+    "data_objects": [...],           # List of (name, lane, column, position)
+    "data_associations": [...],      # List of (source, target, direction)
+    
+    # Optional layout settings (defaults shown)
     "SPACING": 150,                  # Horizontal spacing
     "START_X": 80,                   # Starting X position
     "TASK_WIDTH": 120,               # Task width
     "TASK_HEIGHT": 60,               # Task height
+    "DATA_WIDTH": 40,                # Data object width
+    "DATA_HEIGHT": 50,               # Data object height
+    "DATA_OFFSET_X": 20,             # Data object X offset from column
+    "DATA_OFFSET_Y": 80,             # Data object Y offset (positive = below tasks)
     "WAIT_TIME_MS": 50,              # Wait between unmask checks
     "MAX_ATTEMPTS": 3,               # Max unmask attempts
 }
@@ -156,6 +170,49 @@ CONFIG = {
 - **column_index**: Horizontal position (0 = leftmost)
 - Elements in same lane at same column will overlap!
 - Plan your column layout carefully for complex processes
+
+### Data Objects Format (Optional)
+
+```python
+"data_objects": [
+    ("Data Name", "Lane Name", column_index, "above|below"),
+    # ...
+]
+```
+
+- **Data Name**: Unique string for the data object
+- **Lane Name**: Which lane to place it in
+- **column_index**: Horizontal position (typically same column as the task that outputs it)
+- **position**: `"below"` (recommended) or `"above"` relative to lane center
+
+**Positioning Note**: Data objects are positioned lane-by-lane (top to bottom). When data objects extend beyond a lane's boundary, Modelio auto-expands the lane, pushing subsequent lanes down. The helper library handles this by re-reading lane coordinates after each lane's data objects are positioned.
+
+### Data Associations Format (Optional)
+
+```python
+"data_associations": [
+    ("Source Name", "Target Name", "input|output"),
+    # ...
+]
+```
+
+- **Source/Target**: Element or data object names
+- **direction**:
+  - `"output"`: Task produces data (Task → Data Object)
+  - `"input"`: Task consumes data (Data Object → Task)
+
+**BPMN Semantics**:
+- OUTPUT: Sets `StartingActivity = Task`, `TargetRef = DataObject`
+- INPUT: Sets `EndingActivity = Task`, `SourceRef = DataObject`
+
+**Data Flow Pattern**: A typical data flow goes:
+```
+Task A --(output)--> Data Object --(input)--> Task B
+```
+
+This means:
+1. Task A produces the data object (output association, arrow from Task A to Data Object)
+2. The data object is consumed by Task B (input association, arrow from Data Object to Task B)
 
 ---
 
@@ -229,17 +286,79 @@ CONFIG = {
 
 ---
 
+## Example: Process with Data Objects
+
+```python
+CONFIG = {
+    "name": "DocumentReview",
+    
+    "lanes": ["Author", "Reviewer"],
+    
+    "elements": [
+        ("Start",           START,     "Author"),
+        ("Write Document",  USER_TASK, "Author"),
+        ("Submit",          USER_TASK, "Author"),
+        ("Review",          USER_TASK, "Reviewer"),
+        ("Add Comments",    USER_TASK, "Reviewer"),
+        ("End",             END,       "Reviewer"),
+    ],
+    
+    # Data Objects: (name, lane, column, position)
+    # Place below the task that outputs them (same column)
+    "data_objects": [
+        ("Draft",     "Author",   1, "below"),  # Below Write Document
+        ("Final Doc", "Author",   2, "below"),  # Below Submit
+        ("Comments",  "Reviewer", 3, "below"),  # Below Review
+    ],
+    
+    # Data Associations: (source, target, direction)
+    # Pattern: Task outputs data, data inputs to next task
+    "data_associations": [
+        ("Write Document", "Draft",        "output"),  # Task produces data
+        ("Draft",          "Submit",       "input"),   # Data consumed by task
+        ("Submit",         "Final Doc",    "output"),
+        ("Final Doc",      "Review",       "input"),
+        ("Review",         "Comments",     "output"),
+        ("Comments",       "Add Comments", "input"),
+    ],
+    
+    "flows": [
+        ("Start",          "Write Document", ""),
+        ("Write Document", "Submit",         ""),
+        ("Submit",         "Review",         ""),
+        ("Review",         "Add Comments",   ""),
+        ("Add Comments",   "End",            ""),
+    ],
+    
+    "layout": {
+        "Start":          0,
+        "Write Document": 1,
+        "Submit":         2,
+        "Review":         3,
+        "Add Comments":   4,
+        "End":            5,
+    },
+}
+```
+
+---
+
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| `IOError: No such file` | Check BPMN_Helpers_v2.py path in execfile() |
+| `IOError: No such file` | Check BPMN_Helpers.py path in execfile() |
 | `NameError: createBPMNFromConfig` | execfile() path is wrong or file missing |
 | UnicodeDecodeError | Use ASCII only - no special characters |
 | Element in wrong lane | Check lane name spelling in elements list |
 | Missing element | Check name spelling in layout and flows |
 | Elements overlap | Use different column indices |
 | Flow not showing | Check source/target names match exactly |
+| Data association missing | Check element names in data_associations |
+| Data association arrow wrong direction | Verify "input" vs "output" direction is correct |
+| Data object overlaps task | Adjust DATA_OFFSET_Y or use "above" position |
+| Data object outside lane | Handled automatically by lane-by-lane positioning |
+| Guard not showing | Verify flow tuple has 3 elements: (src, tgt, guard) |
 
 ---
 
@@ -250,10 +369,10 @@ When generating a process file, include this note:
 ```
 ## Setup (one time)
 
-1. Place `BPMN_Helpers_v2.py` in your Modelio macros folder:
-   `.modelio/5.4/macros/BPMN_Helpers_v2.py`
+1. Place `BPMN_Helpers.py` in your Modelio macros folder:
+   `.modelio/5.4/macros/BPMN_Helpers.py`
 
-2. Adjust the path in execfile() if your Modelio version differs
+2. Adjust the path in execfile() if the path differs
 
 ## Usage
 
@@ -264,8 +383,22 @@ When generating a process file, include this note:
 
 ---
 
+## Test Cases Available
+
+| Test | Description | Features Tested |
+|------|-------------|-----------------|
+| Test_01_SimpleLinear | 3 tasks in sequence | START, END, USER_TASK, basic flows |
+| Test_02_ExclusiveGateway | Decision with guards | EXCLUSIVE_GW, guards, multiple ends |
+| Test_03_ParallelGateway | Fork and join | PARALLEL_GW, parallel paths |
+| Test_04_TimerMessageEvents | Scheduled process | TIMER_START, MESSAGE_END, SERVICE_TASK |
+| Test_05_DataObjects | Document workflow | DATA_OBJECT, data_associations |
+| Test_06_MultipleLanesTaskTypes | Order processing | All task types, 3 lanes |
+
+---
+
 ## Version History
 
-- v7.0 (Dec 2025): Two-file approach - helpers + configuration
+- v7.1 (Dec 2025): Fixed Data Association semantics (StartingActivity/EndingActivity), lane-by-lane data object positioning
+- v7.0 (Dec 2025): Two-file approach with Data Objects and Data Associations
 - v6.0 (Dec 2025): Single-file with all helpers included
 - Earlier: Various experimental approaches

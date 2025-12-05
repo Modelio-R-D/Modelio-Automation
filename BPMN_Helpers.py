@@ -1,5 +1,5 @@
 #
-# BPMN_Helpers_v2.py
+# BPMN_Helpers.py
 #
 # Description:
 #   Reusable helper library for creating BPMN process diagrams in Modelio.
@@ -12,7 +12,7 @@
 #   - BUT: There may be a delay before elements are available
 #   - IF elements still missing: manual unmask INSIDE the correct lane
 #
-# Version: 2.0 - December 2025
+# Version: 2.1 - December 2025
 #
 
 from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
@@ -31,6 +31,17 @@ from org.eclipse.draw2d.geometry import Rectangle as Draw2DRectangle
 import re
 import time
 
+# Try to import Data Object classes (may not be available in all Modelio versions)
+try:
+    from org.modelio.metamodel.bpmn.objects import BpmnDataObject
+    from org.modelio.metamodel.bpmn.objects import BpmnDataAssociation
+    _DATA_OBJECTS_AVAILABLE = True
+except ImportError:
+    _DATA_OBJECTS_AVAILABLE = False
+    print "WARNING: BpmnDataObject/BpmnDataAssociation not available in this Modelio version"
+
+print "BPMN_Helpers_v2.py loaded (Data Objects: " + str(_DATA_OBJECTS_AVAILABLE) + ")"
+
 
 # ============================================================================
 # DEFAULT CONFIGURATION
@@ -48,6 +59,12 @@ BPMN_DEFAULT_CONFIG = {
     # Task dimensions
     "TASK_WIDTH": 120,            # Width for all tasks
     "TASK_HEIGHT": 60,            # Height for all tasks
+    
+    # Data object dimensions
+    "DATA_WIDTH": 40,             # Width for data objects
+    "DATA_HEIGHT": 50,            # Height for data objects
+    "DATA_OFFSET_X": 20,          # Horizontal offset from column position
+    "DATA_OFFSET_Y": 80,          # Vertical offset from lane center (positive = below tasks)
 }
 
 
@@ -55,16 +72,24 @@ BPMN_DEFAULT_CONFIG = {
 # ELEMENT TYPE CONSTANTS
 # ============================================================================
 
+# Events
 START = "START"
 MESSAGE_START = "MESSAGE_START"
 TIMER_START = "TIMER_START"
 END = "END"
 MESSAGE_END = "MESSAGE_END"
+
+# Tasks
 USER_TASK = "USER_TASK"
 SERVICE_TASK = "SERVICE_TASK"
 MANUAL_TASK = "MANUAL_TASK"
+
+# Gateways
 EXCLUSIVE_GW = "EXCLUSIVE_GW"
 PARALLEL_GW = "PARALLEL_GW"
+
+# Data
+DATA_OBJECT = "DATA_OBJECT"
 
 
 # ============================================================================
@@ -183,6 +208,21 @@ def _createParallelGateway(process, name):
     return gateway
 
 
+def _createDataObject(process, name):
+    """Create a BPMN Data Object (document icon)."""
+    if not _DATA_OBJECTS_AVAILABLE:
+        print "ERROR: BpmnDataObject not available in this Modelio version"
+        return None
+    try:
+        dataObj = modelingSession.getModel().createBpmnDataObject()
+        dataObj.setName(name)
+        dataObj.setContainer(process)
+        return dataObj
+    except Exception as e:
+        print "ERROR creating data object '" + name + "': " + str(e)
+        return None
+
+
 def _createSequenceFlow(process, source, target, guard=""):
     """Create a BPMN Sequence Flow (arrow between elements)."""
     flow = modelingSession.getModel().createBpmnSequenceFlow()
@@ -201,6 +241,47 @@ def _createSequenceFlow(process, source, target, guard=""):
     return flow
 
 
+def _createDataAssociation(process, source, target, direction):
+    """
+    Create a BPMN Data Association (dotted arrow for data flow).
+    
+    Args:
+        process: The BPMN process
+        source: Source element (task for output, data object for input)
+        target: Target element (data object for output, task for input)
+        direction: "input" (data->task) or "output" (task->data)
+    
+    Returns:
+        The created BpmnDataAssociation or None
+    
+    BPMN Data Association Semantics:
+        - OUTPUT (Task -> DataObject): StartingActivity = Task, TargetRef = DataObject
+        - INPUT (DataObject -> Task): EndingActivity = Task, SourceRef = DataObject
+    """
+    if not _DATA_OBJECTS_AVAILABLE:
+        print "ERROR: BpmnDataAssociation not available in this Modelio version"
+        return None
+    
+    try:
+        assoc = modelingSession.getModel().createBpmnDataAssociation()
+        
+        if direction == "input":
+            # Data flows INTO the activity (DataObject -> Task)
+            # source = data object, target = task
+            assoc.getSourceRef().add(source)   # SourceRef = DataObject
+            assoc.setEndingActivity(target)    # EndingActivity = Task (receives data)
+        else:
+            # Data flows OUT OF the activity (Task -> DataObject)
+            # source = task, target = data object
+            assoc.setTargetRef(target)         # TargetRef = DataObject
+            assoc.setStartingActivity(source)  # StartingActivity = Task (produces data)
+        
+        return assoc
+    except Exception as e:
+        print "ERROR creating data association: " + str(e)
+        return None
+
+
 # Element type to creator function mapping
 _ELEMENT_CREATORS = {
     START: _createStartEvent,
@@ -214,6 +295,10 @@ _ELEMENT_CREATORS = {
     EXCLUSIVE_GW: _createExclusiveGateway,
     PARALLEL_GW: _createParallelGateway,
 }
+
+# Add DATA_OBJECT only if available
+if _DATA_OBJECTS_AVAILABLE:
+    _ELEMENT_CREATORS[DATA_OBJECT] = _createDataObject
 
 
 def _createElement(process, name, elementType):
@@ -371,8 +456,14 @@ def createBPMNFromConfig(parentPackage, config):
         "elements": [("Name", TYPE, "LaneName"), ...],
         "flows": [("Source", "Target", "Guard"), ...],
         "layout": {"Name": column_index, ...},
+        
+        # Optional - Data Objects and Associations
+        "data_objects": [("DataName", "LaneName", column_index, "above|below"), ...],
+        "data_associations": [("SourceName", "TargetName", "input|output"), ...],
+        
         # Optional overrides:
         "SPACING": 150, "START_X": 80, "TASK_WIDTH": 120, "TASK_HEIGHT": 60,
+        "DATA_WIDTH": 40, "DATA_HEIGHT": 50, "DATA_OFFSET_X": 20, "DATA_OFFSET_Y": 80,
     }
     """
     
@@ -386,7 +477,8 @@ def createBPMNFromConfig(parentPackage, config):
     
     # Merge config with defaults
     cfg = dict(BPMN_DEFAULT_CONFIG)
-    for key in ["SPACING", "START_X", "TASK_WIDTH", "TASK_HEIGHT", "WAIT_TIME_MS", "MAX_ATTEMPTS"]:
+    for key in ["SPACING", "START_X", "TASK_WIDTH", "TASK_HEIGHT", "WAIT_TIME_MS", "MAX_ATTEMPTS",
+                "DATA_WIDTH", "DATA_HEIGHT", "DATA_OFFSET_X", "DATA_OFFSET_Y"]:
         if key in config:
             cfg[key] = config[key]
     
@@ -460,6 +552,42 @@ def createBPMNFromConfig(parentPackage, config):
     print "  Total: " + str(len(elements)) + " elements"
     
     # =========================================================================
+    # PHASE 2B: CREATE DATA OBJECTS
+    # =========================================================================
+    dataObjectDefs = config.get("data_objects", [])
+    dataObjects = []
+    dataObjectRefs = {}
+    dataObjectLanes = {}
+    dataObjectLayout = {}  # name -> (column, position)
+    
+    if dataObjectDefs:
+        print ""
+        print "== PHASE 2B: CREATE DATA OBJECTS ================================"
+        print ""
+        
+        for dataDef in dataObjectDefs:
+            name, laneName, column, position = dataDef
+            
+            try:
+                dataObj = _createDataObject(process, name)
+                if dataObj:
+                    if laneName in lanes:
+                        _addToLane(dataObj, lanes[laneName])
+                    dataObjects.append(dataObj)
+                    dataObjectRefs[name] = dataObj
+                    dataObjectLanes[name] = laneName
+                    dataObjectLayout[name] = (column, position)
+                    # Also add to elementRefs for association lookups
+                    elementRefs[name] = dataObj
+                    elementLanes[name] = laneName
+                else:
+                    print "[" + str(step()) + "] FAILED: " + name
+            except Exception as e:
+                print "[" + str(step()) + "] ERROR creating " + name + ": " + str(e)
+        
+        print "[" + str(step()) + "] Data Objects: " + str(len(dataObjects))
+    
+    # =========================================================================
     # PHASE 3: CREATE DIAGRAM
     # =========================================================================
     print ""
@@ -485,21 +613,24 @@ def createBPMNFromConfig(parentPackage, config):
     
     layoutConfig = config.get("layout", {})
     
-    elementGraphics, attempts = _waitForElements(diagramHandle, elements, cfg)
+    # Combine elements and data objects for waiting
+    allElements = elements + dataObjects
+    
+    elementGraphics, attempts = _waitForElements(diagramHandle, allElements, cfg)
     foundCount = len(elementGraphics)
     
-    if foundCount < len(elements):
+    if foundCount < len(allElements):
         print ""
         print "[" + str(step()) + "] Manual unmask for missing elements..."
         print ""
-        unmaskedCount = _unmaskMissingElements(diagramHandle, elements, elementGraphics, lanes, elementLanes)
+        unmaskedCount = _unmaskMissingElements(diagramHandle, allElements, elementGraphics, lanes, elementLanes)
         
         if unmaskedCount > 0:
             diagramHandle.save()
     
     foundCount = len(elementGraphics)
     print ""
-    print "[" + str(step()) + "] Elements ready: " + str(foundCount) + "/" + str(len(elements))
+    print "[" + str(step()) + "] Elements ready: " + str(foundCount) + "/" + str(len(allElements))
     print "  " + _formatLanesSummary(diagramHandle, lanes, laneOrder)
     
     # =========================================================================
@@ -567,6 +698,79 @@ def createBPMNFromConfig(parentPackage, config):
     print "[" + str(step()) + "] Repositioned: " + str(repositionedCount) + "/" + str(len(elements))
     
     # =========================================================================
+    # PHASE 5B: REPOSITION DATA OBJECTS (lane by lane)
+    # =========================================================================
+    if dataObjects:
+        print ""
+        print "== PHASE 5B: REPOSITION DATA OBJECTS ============================"
+        print ""
+        
+        dataWidth = cfg["DATA_WIDTH"]
+        dataHeight = cfg["DATA_HEIGHT"]
+        dataOffsetX = cfg["DATA_OFFSET_X"]
+        dataOffsetY = cfg["DATA_OFFSET_Y"]
+        
+        dataRepositioned = 0
+        
+        # Process each lane in order
+        for laneName in laneOrder:
+            # Check if this lane has any data objects
+            laneHasData = any(dataObjectLanes.get(name) == laneName for name in dataObjectLayout.keys())
+            if not laneHasData:
+                continue
+            
+            # Get CURRENT lane center (may have shifted due to previous lane expansion)
+            currentLaneCenterY = _getLaneCenterY(diagramHandle, lanes[laneName])
+            if not currentLaneCenterY:
+                continue
+            
+            # Get current lane bounds for logging
+            lb = _getBounds(diagramHandle, lanes[laneName])
+            lbInfo = ""
+            if lb:
+                lbInfo = str(int(lb["y"])) + "-" + str(int(lb["y"] + lb["h"]))
+            
+            print "[" + laneName + "] center=" + str(int(currentLaneCenterY)) + " bounds=" + lbInfo
+            
+            # Find data objects belonging to this lane
+            laneDataCount = 0
+            for name, (column, position) in dataObjectLayout.items():
+                if dataObjectLanes.get(name) != laneName:
+                    continue
+                    
+                if name not in elementGraphics:
+                    print "  " + name + ": SKIP (not in graphics)"
+                    continue
+                
+                dg = elementGraphics[name]
+                
+                # X position: column position + horizontal offset
+                targetX = startX + spacing * column + dataOffsetX
+                
+                # Y position: CURRENT lane center + vertical offset
+                if position == "above":
+                    targetY = currentLaneCenterY - dataOffsetY
+                else:  # below
+                    targetY = currentLaneCenterY + dataOffsetY
+                
+                print "  " + name + " -> (" + str(int(targetX)) + "," + str(int(targetY)) + ")"
+                
+                newBounds = Draw2DRectangle(
+                    int(targetX), int(targetY),
+                    int(dataWidth), int(dataHeight)
+                )
+                dg.setBounds(newBounds)
+                dataRepositioned += 1
+                laneDataCount += 1
+            
+            # Save after each lane to trigger Modelio's auto-expansion
+            if laneDataCount > 0:
+                diagramHandle.save()
+                print ""
+        
+        print "[" + str(step()) + "] Data objects repositioned: " + str(dataRepositioned) + "/" + str(len(dataObjects))
+    
+    # =========================================================================
     # PHASE 6: CREATE FLOWS
     # =========================================================================
     print ""
@@ -584,7 +788,37 @@ def createBPMNFromConfig(parentPackage, config):
             flow = _createSequenceFlow(process, src, tgt, guard)
             flows.append(flow)
     
-    print "[" + str(step()) + "] Created " + str(len(flows)) + " flows"
+    print "[" + str(step()) + "] Created " + str(len(flows)) + " sequence flows"
+    
+    # =========================================================================
+    # PHASE 6B: CREATE DATA ASSOCIATIONS
+    # =========================================================================
+    dataAssocDefs = config.get("data_associations", [])
+    dataAssocs = []
+    
+    if dataAssocDefs:
+        print ""
+        print "== PHASE 6B: CREATE DATA ASSOCIATIONS ==========================="
+        print ""
+        
+        for assocDef in dataAssocDefs:
+            srcName, tgtName, direction = assocDef
+            
+            src = elementRefs.get(srcName)
+            tgt = elementRefs.get(tgtName)
+            
+            if not src:
+                print "  ERROR: Source not found: " + srcName
+                continue
+            if not tgt:
+                print "  ERROR: Target not found: " + tgtName
+                continue
+            
+            assoc = _createDataAssociation(process, src, tgt, direction)
+            if assoc:
+                dataAssocs.append(assoc)
+        
+        print "[" + str(step()) + "] Data associations: " + str(len(dataAssocs))
     
     diagramHandle.save()
     diagramHandle.close()
@@ -596,7 +830,13 @@ def createBPMNFromConfig(parentPackage, config):
     print "=================================================================="
     print "COMPLETE: " + processName
     print "=================================================================="
-    print "Lanes: " + str(len(lanes)) + " | Elements: " + str(len(elements)) + " | Flows: " + str(len(flows))
+    summary = "Lanes: " + str(len(lanes)) + " | Elements: " + str(len(elements))
+    if dataObjects:
+        summary += " | Data: " + str(len(dataObjects))
+    summary += " | Flows: " + str(len(flows))
+    if dataAssocs:
+        summary += " | DataAssoc: " + str(len(dataAssocs))
+    print summary
     print "=================================================================="
     
     return process

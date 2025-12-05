@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.2] - December 2025
+
+### Fixed
+- **Data Association semantics**: Corrected `StartingActivity`/`EndingActivity` and `SourceRef`/`TargetRef` settings for proper BPMN compliance
+  - `output`: Sets `StartingActivity = Task`, `TargetRef = DataObject`
+  - `input`: Sets `EndingActivity = Task`, `SourceRef = DataObject`
+
+### Changed
+- **Lane-by-lane positioning**: Data objects are now positioned lane-by-lane (top to bottom) to handle Modelio's automatic lane expansion when data objects extend beyond boundaries
+
+---
+
+## [v2.1] - December 2025
+
+### Added
+- **Data Objects**: New `DATA_OBJECT` element type for representing documents and data in processes
+- **Data Associations**: Connect tasks to data objects with `input`/`output` direction
+- `data_objects` configuration section: `(name, lane, column, position)`
+- `data_associations` configuration section: `(source, target, direction)`
+- New configuration options:
+  - `DATA_WIDTH` (default: 40) - Width of data objects
+  - `DATA_HEIGHT` (default: 50) - Height of data objects
+  - `DATA_OFFSET_X` (default: 20) - X offset from column center
+  - `DATA_OFFSET_Y` (default: 80) - Y offset from lane center (positive = below)
+- Position option: `"above"` or `"below"` for data object placement relative to tasks
+
+### Documentation
+- Updated `CLAUDE_INSTRUCTIONS.md` to v7.1 with data object examples
+- Updated `API_REFERENCE.md` with complete data object/association documentation
+
+---
+
 ## [v2.0] - December 2025
 
 ### Added
@@ -115,6 +147,24 @@ The following versions used a single-file approach where all helper functions we
 ---
 
 ## Key Discoveries
+
+### Data Association Semantics (v7.1)
+
+BPMN data associations have specific semantics:
+
+| Direction | Arrow | BPMN Properties |
+|-----------|-------|-----------------|
+| `output` | Task → Data | `StartingActivity=Task`, `TargetRef=Data` |
+| `input` | Data → Task | `SourceRef=Data`, `EndingActivity=Task` |
+
+Typical pattern for data flowing between tasks:
+```
+Task A --(output)--> Data Object --(input)--> Task B
+```
+
+### Lane Expansion with Data Objects (v7.1)
+
+When data objects are positioned below/above tasks, they may extend beyond lane boundaries. Modelio auto-expands lanes to accommodate this, which shifts subsequent lanes down. Solution: position data objects lane-by-lane and re-read lane coordinates after each lane.
 
 ### Auto-Unmask Behavior (v0.8.0)
 

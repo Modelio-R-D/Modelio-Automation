@@ -9,12 +9,13 @@ Generate BPMN (Business Process Model and Notation) diagrams in [Modelio](https:
 This project enables you to:
 
 - **Describe a business process in plain language** and have Claude, ChatGPT, or Gemini generate the Modelio macro
-- **Automatically create BPMN diagrams** with lanes, tasks, gateways, and flows
+- **Automatically create BPMN diagrams** with lanes, tasks, gateways, data objects, and flows
 - **Customize layout** with configurable spacing, task dimensions, and positioning
 
 ## Features
 
 - ✅ Support for all common BPMN elements (Start/End Events, User/Service/Manual Tasks, Gateways)
+- ✅ **Data Objects** with input/output associations to tasks
 - ✅ Automatic swim lane creation and element positioning
 - ✅ Sequence flows with labels for gateway decisions
 - ✅ Configurable task dimensions and spacing
@@ -147,6 +148,14 @@ CONFIG = {
         "Approved?": 2,
         # ...
     },
+    # Optional: Data Objects
+    "data_objects": [
+        ("Expense Report", "Employee", 0, "below"),
+    ],
+    "data_associations": [
+        ("Submit Expense", "Expense Report", "output"),
+        ("Expense Report", "Review", "input"),
+    ],
 }
 ```
 
@@ -174,6 +183,7 @@ When a BPMN diagram is created, Modelio automatically "unmasks" elements. Howeve
 | Service Task | `SERVICE_TASK` | ⚙▭ | Automated/system task |
 | Exclusive Gateway | `EXCLUSIVE_GW` | ◇ | XOR decision (one path) |
 | Parallel Gateway | `PARALLEL_GW` | ⊕ | AND split/join (all paths) |
+| Data Object | `DATA_OBJECT` | 📄 | Document or data in process |
 
 ---
 
@@ -188,14 +198,43 @@ CONFIG = {
     "flows": [...],
     "layout": {...},
     
-    # Optional (with defaults)
+    # Optional - Data Objects (v2.1+)
+    "data_objects": [...],      # List of (name, lane, column, position)
+    "data_associations": [...], # List of (source, target, direction)
+    
+    # Optional - Layout Settings (with defaults)
     "SPACING": 150,        # Horizontal spacing between columns
     "START_X": 80,         # Starting X position
     "TASK_WIDTH": 120,     # Width for task elements
     "TASK_HEIGHT": 60,     # Height for task elements
+    "DATA_WIDTH": 40,      # Width for data objects
+    "DATA_HEIGHT": 50,     # Height for data objects
+    "DATA_OFFSET_X": 20,   # Data object X offset from column
+    "DATA_OFFSET_Y": 80,   # Data object Y offset (positive = below)
     "WAIT_TIME_MS": 50,    # Time between unmask attempts
     "MAX_ATTEMPTS": 3,     # Maximum unmask attempts
 }
+```
+
+### Data Objects Configuration
+
+```python
+# Format: (name, lane, column, position)
+"data_objects": [
+    ("Draft Document", "Author", 1, "below"),
+    ("Final Report", "Reviewer", 3, "above"),
+]
+```
+
+### Data Associations Configuration
+
+```python
+# Format: (source, target, direction)
+# direction: "output" = task produces data, "input" = task consumes data
+"data_associations": [
+    ("Write Document", "Draft Document", "output"),  # Task → Data
+    ("Draft Document", "Review Task", "input"),      # Data → Task
+]
 ```
 
 ---
@@ -231,6 +270,12 @@ Process Name: ExpenseApproval_83950
 == PHASE 6: CREATE FLOWS ========================================
   Created 20 sequence flows
 
+== PHASE 7: CREATE DATA OBJECTS =================================
+  Created 2 data objects
+
+== PHASE 8: CREATE DATA ASSOCIATIONS ============================
+  Created 4 data associations
+
 ==================================================================
 COMPLETE
 ==================================================================
@@ -247,6 +292,7 @@ COMPLETE
 | Mention parallel work | "HR and IT work in parallel" |
 | Specify task types | "automated email" → Service Task |
 | Include error paths | "If validation fails, return to customer" |
+| Mention documents/data | "produces an invoice" → Data Object |
 
 ---
 
@@ -261,6 +307,8 @@ COMPLETE
 | Elements overlap | Increase `SPACING` or adjust column indices in layout |
 | Text doesn't fit | Increase `TASK_WIDTH` and `TASK_HEIGHT` |
 | Diagram is empty | Wait and refresh; check model tree for the process |
+| Data object overlaps task | Adjust `DATA_OFFSET_Y` or use `"above"` position |
+| Data association arrow wrong | Verify `"input"` vs `"output"` direction |
 
 ---
 
@@ -289,6 +337,8 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## Version History
 
+- **v2.2** (Dec 2025) - Fixed Data Association semantics, lane-by-lane data object positioning
+- **v2.1** (Dec 2025) - Added Data Objects and Data Associations support
 - **v2.0** (Dec 2025) - Two-file architecture with helper library
 - **v1.0** (Dec 2025) - Single-file approach with inline helpers
 
