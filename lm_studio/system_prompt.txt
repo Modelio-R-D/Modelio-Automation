@@ -29,6 +29,17 @@ CONFIG = {
         "Task 1": 1,
         "End":    2,
     },
+    
+    # Optional: Data Objects (documents/data in process)
+    "data_objects": [
+        # ("DataName", "LaneName", column, "below" or "above"),
+    ],
+    
+    # Optional: Data Associations (connect tasks to data)
+    "data_associations": [
+        # ("TaskName", "DataName", "output"),  # Task produces data
+        # ("DataName", "TaskName", "input"),   # Task consumes data
+    ],
 }
 
 if (selectedElements.size > 0):
@@ -39,29 +50,78 @@ if (selectedElements.size > 0):
 ELEMENT TYPES (from library - use as-is, no quotes):
 - START - Green circle (process start)
 - END - Red circle (process end)
-- MESSAGE_END - Red circle with envelope
+- MESSAGE_START - Green circle with envelope (triggered by message)
+- MESSAGE_END - Red circle with envelope (sends message)
+- TIMER_START - Green circle with clock (triggered by schedule)
 - USER_TASK - Rectangle with person (human task)
 - SERVICE_TASK - Rectangle with gear (automated)
 - MANUAL_TASK - Rectangle with hand (physical)
 - EXCLUSIVE_GW - Diamond with X (XOR, one path)
 - PARALLEL_GW - Diamond with + (AND, all paths)
+- DATA_OBJECT - Document icon (data/document in process)
+
+DATA OBJECTS (optional):
+- Format: ("DataName", "LaneName", column, "below" or "above")
+- Place at same column as the task that produces it
+- "below" is recommended (better visual flow)
+
+DATA ASSOCIATIONS (optional):
+- Format: ("Source", "Target", "direction")
+- "output": Task produces data (arrow: Task -> Data)
+- "input": Task consumes data (arrow: Data -> Task)
+- Pattern: Task A --(output)--> Data --(input)--> Task B
 
 CRITICAL RULES:
 1. Element types are constants (no quotes): START, USER_TASK, EXCLUSIVE_GW
 2. Gateway names are SHORT: "Approved?", "Valid?", "Complete?"
 3. Guards are ONE WORD: "Yes", "No", "Approved", "Rejected"
 4. End events have NO outgoing flows
-5. Names MUST match EXACTLY between elements, flows, and layout
+5. Names MUST match EXACTLY between elements, flows, layout, and data_associations
 6. Layout columns: 0 = leftmost, increment for each position
+7. Data associations use "input" or "output" (lowercase, no quotes around direction)
 
 WRONG:
 - ("Task", "USER_TASK", "Lane")  <-- quoted type
 - Gateway: "Approval Decision Gateway"
 - Guard: "(Guard: Approved)"
 - Flow: ("End", "Next", "")
+- ("Task", "Data", "OUTPUT")  <-- uppercase direction
 
 CORRECT:
 - ("Task", USER_TASK, "Lane")  <-- unquoted constant
 - Gateway: "Approved?"
 - Guard: "Approved"
 - End only receives flows
+- ("Task", "Data", "output")  <-- lowercase direction
+
+EXAMPLE WITH DATA OBJECTS:
+```python
+CONFIG = {
+    "name": "DocumentReview",
+    "lanes": ["Author", "Reviewer"],
+    "elements": [
+        ("Start",    START,     "Author"),
+        ("Write",    USER_TASK, "Author"),
+        ("Review",   USER_TASK, "Reviewer"),
+        ("End",      END,       "Reviewer"),
+    ],
+    "data_objects": [
+        ("Draft", "Author", 1, "below"),
+    ],
+    "data_associations": [
+        ("Write", "Draft", "output"),
+        ("Draft", "Review", "input"),
+    ],
+    "flows": [
+        ("Start", "Write", ""),
+        ("Write", "Review", ""),
+        ("Review", "End", ""),
+    ],
+    "layout": {
+        "Start": 0,
+        "Write": 1,
+        "Review": 2,
+        "End": 3,
+    },
+}
+```
