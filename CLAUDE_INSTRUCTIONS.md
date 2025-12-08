@@ -392,7 +392,6 @@ When generating a process file, include this note:
 | Test_03_ParallelGateway | Fork and join | PARALLEL_GW, parallel paths |
 | Test_04_TimerMessageEvents | Scheduled process | TIMER_START, MESSAGE_END, SERVICE_TASK |
 | Test_05_DataObjects | Document workflow | DATA_OBJECT, data_associations |
-| Test_06_MultipleLanesTaskTypes | Order processing | All task types, 3 lanes |
 
 ---
 
