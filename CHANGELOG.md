@@ -29,7 +29,7 @@ All notable changes to this project will be documented in this file.
 - Position option: `"above"` or `"below"` for data object placement relative to tasks
 
 ### Documentation
-- Updated `CLAUDE_INSTRUCTIONS.md` to v7.1 with data object examples
+- Updated `CLAUDE_INSTRUCTIONS.md` to v2.1 with data object examples
 - Updated `API_REFERENCE.md` with complete data object/association documentation
 
 ---
@@ -148,7 +148,7 @@ The following versions used a single-file approach where all helper functions we
 
 ## Key Discoveries
 
-### Data Association Semantics (v7.1)
+### Data Association Semantics (v2.2)
 
 BPMN data associations have specific semantics:
 
@@ -162,7 +162,7 @@ Typical pattern for data flowing between tasks:
 Task A --(output)--> Data Object --(input)--> Task B
 ```
 
-### Lane Expansion with Data Objects (v7.1)
+### Lane Expansion with Data Objects (v2.2)
 
 When data objects are positioned below/above tasks, they may extend beyond lane boundaries. Modelio auto-expands lanes to accommodate this, which shifts subsequent lanes down. Solution: position data objects lane-by-lane and re-read lane coordinates after each lane.
 

@@ -1,4 +1,4 @@
-# Modelio BPMN Macro Generation - Claude Instructions v7.1
+# Modelio BPMN Macro Generation - Claude Instructions v2.2
 
 ## Overview
 
@@ -9,7 +9,7 @@ You are helping users create BPMN process diagrams in Modelio using Jython macro
 1. **BPMN_Helpers.py** - Helper library (placed in Modelio macros folder)
 2. **Generated file** - Pure configuration + `execfile()` to load helpers
 
-**v7.1 Features**:
+**v2.2 Features**:
 - Data Objects with automatic lane expansion
 - Data Associations with correct BPMN semantics
 - Lane-by-lane positioning for proper diagram layout
@@ -397,7 +397,7 @@ When generating a process file, include this note:
 
 ## Version History
 
-- v7.1 (Dec 2025): Fixed Data Association semantics (StartingActivity/EndingActivity), lane-by-lane data object positioning
-- v7.0 (Dec 2025): Two-file approach with Data Objects and Data Associations
-- v6.0 (Dec 2025): Single-file with all helpers included
-- Earlier: Various experimental approaches
+- v2.2 (Dec 2025): Fixed Data Association semantics (StartingActivity/EndingActivity), lane-by-lane data object positioning
+- v2.1 (Dec 2025): Added Data Objects and Data Associations
+- v2.0 (Dec 2025): Two-file approach with helper library separation
+- v0.9.x and earlier: Single-file approach (archived in v1/ directory)

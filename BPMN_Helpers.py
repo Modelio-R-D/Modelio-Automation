@@ -12,7 +12,7 @@
 #   - BUT: There may be a delay before elements are available
 #   - IF elements still missing: manual unmask INSIDE the correct lane
 #
-# Version: 2.1 - December 2025
+# Version: 2.2 - December 2025
 #
 
 from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
