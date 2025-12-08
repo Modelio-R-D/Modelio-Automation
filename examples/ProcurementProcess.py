@@ -222,6 +222,6 @@ if (selectedElements.size > 0):
     if (isinstance(element, Package)):
         createBPMNFromConfig(element, CONFIG)
     else:
-        print "ERROR: Please select a Package to create the process."
+        print "ERROR: Please select a Package."
 else:
     print "ERROR: Please select a Package first."

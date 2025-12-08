@@ -78,9 +78,9 @@ if (selectedElements.size > 0):
     if (isinstance(element, Package)):
         createBPMNFromConfig(element, CONFIG)
     else:
-        print "ERROR: Select a Package."
+        print "ERROR: Please select a Package."
 else:
-    print "ERROR: Select a Package first."
+    print "ERROR: Please select a Package first."
 ```
 
 ---
