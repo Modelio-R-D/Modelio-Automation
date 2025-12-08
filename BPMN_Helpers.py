@@ -3,8 +3,8 @@
 #
 # Description:
 #   Reusable helper library for creating BPMN process diagrams in Modelio.
-#   Place this file in: .modelio/5.4/macros/BPMN_Helpers_v2.py
-#   Load from generated scripts with: execfile(".modelio/5.4/macros/BPMN_Helpers_v2.py")
+#   Place this file in: .modelio/5.4/macros/BPMN_Helpers.py
+#   Load from generated scripts with: execfile(".modelio/5.4/macros/BPMN_Helpers.py")
 #
 # Key Insight (from Modelio developers, Dec 2025):
 #   - Modelio automatically unmasks elements when a diagram is created
@@ -40,7 +40,7 @@ except ImportError:
     _DATA_OBJECTS_AVAILABLE = False
     print "WARNING: BpmnDataObject/BpmnDataAssociation not available in this Modelio version"
 
-print "BPMN_Helpers_v2.py loaded (Data Objects: " + str(_DATA_OBJECTS_AVAILABLE) + ")"
+print "BPMN_Helpers.py loaded (Data Objects: " + str(_DATA_OBJECTS_AVAILABLE) + ")"
 
 
 # ============================================================================

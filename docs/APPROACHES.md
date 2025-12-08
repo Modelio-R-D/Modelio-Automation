@@ -95,7 +95,7 @@ def createBPMNFromConfig(parentPackage, config):
 **File 2: ExpenseApproval.py** (~100 lines)
 ```python
 # Load helper library
-execfile(".modelio/5.4/macros/BPMN_Helpers_v2.py")
+execfile(".modelio/5.4/macros/BPMN_Helpers.py")
 
 CONFIG = {
     "name": "ExpenseApproval",

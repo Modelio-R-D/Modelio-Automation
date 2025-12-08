@@ -32,7 +32,7 @@ When a user asks for a BPMN diagram:
 
 1. **Ask clarifying questions** about lanes, tasks, decisions if needed
 2. **Generate ONLY the configuration file** (with execfile to load helpers)
-3. **Remind user** to place BPMN_Helpers_v2.py in their macros folder
+3. **Remind user** to place BPMN_Helpers.py in their macros folder
 
 ### Minimal Generated File Template
 

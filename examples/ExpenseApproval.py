@@ -3,7 +3,7 @@
 #
 # Description:
 #   BPMN Expense Approval process - configuration file.
-#   Loads BPMN_Helpers_v2.py automatically via execfile().
+#   Loads BPMN_Helpers.py automatically via execfile().
 #
 # Applicable on: Package
 #
