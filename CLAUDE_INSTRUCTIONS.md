@@ -87,7 +87,7 @@ else:
 
 ## Configuration Reference
 
-### Element Types
+### Element Types (for `elements` list)
 
 | Constant | Icon | Use |
 |----------|------|-----|
@@ -101,7 +101,8 @@ else:
 | `MANUAL_TASK` | Hand rectangle | Physical task without IT |
 | `EXCLUSIVE_GW` | Diamond with X | XOR decision (one path) |
 | `PARALLEL_GW` | Diamond with + | AND split/join (all paths) |
-| `DATA_OBJECT` | Document icon | Data/document in process |
+
+**Note:** For data objects, use the separate `data_objects` configuration section (see below), NOT the `elements` list.
 
 ### CONFIG Structure
 

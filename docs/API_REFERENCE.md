@@ -6,6 +6,8 @@ This document describes all element types, configuration options, and functions 
 
 Use these constants in the `elements` section of your configuration.
 
+**Important:** Data objects use a separate `data_objects` configuration section and are NOT included in the `elements` list.
+
 ### Start Events
 
 | Constant | Visual | Description |
@@ -38,9 +40,15 @@ Use these constants in the `elements` section of your configuration.
 
 ### Data Elements
 
-| Constant | Visual | Description |
-|----------|--------|-------------|
-| `DATA_OBJECT` | 📄 (document icon) | Data or document used/produced by tasks |
+Data objects are configured separately using the `data_objects` section of CONFIG (see [Data Objects List](#data-objects-list) below).
+
+**Note:** `DATA_OBJECT` constant exists internally but is NOT used in the `elements` list. Configure data objects like this:
+
+```python
+"data_objects": [
+    ("Document Name", "Lane Name", column_index, "above|below"),
+]
+```
 
 ---
 
