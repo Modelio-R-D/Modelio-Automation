@@ -64,7 +64,7 @@ BPMN_DEFAULT_CONFIG = {
     "DATA_WIDTH": 40,             # Width for data objects
     "DATA_HEIGHT": 50,            # Height for data objects
     "DATA_OFFSET_X": 20,          # Horizontal offset from column position
-    "DATA_OFFSET_Y": 80,          # Vertical offset from lane center (positive = below tasks)
+    "DATA_OFFSET_Y": 80,          # Vertical offset from lane center (positive = below)
 }
 
 

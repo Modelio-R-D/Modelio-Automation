@@ -77,7 +77,7 @@ CONFIG = {
     "DATA_WIDTH": 40,                # Width of data objects
     "DATA_HEIGHT": 50,               # Height of data objects
     "DATA_OFFSET_X": 20,             # Data object X offset from column center
-    "DATA_OFFSET_Y": 80,             # Data object Y offset (positive = below tasks)
+    "DATA_OFFSET_Y": 80,             # Data object Y offset from lane center (positive = below)
     "WAIT_TIME_MS": 50,              # Milliseconds between unmask checks
     "MAX_ATTEMPTS": 3,               # Maximum unmask retry attempts
 }

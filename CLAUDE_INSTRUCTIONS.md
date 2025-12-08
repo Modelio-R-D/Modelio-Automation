@@ -126,8 +126,8 @@ CONFIG = {
     "TASK_HEIGHT": 60,               # Task height
     "DATA_WIDTH": 40,                # Data object width
     "DATA_HEIGHT": 50,               # Data object height
-    "DATA_OFFSET_X": 20,             # Data object X offset from column
-    "DATA_OFFSET_Y": 80,             # Data object Y offset (positive = below tasks)
+    "DATA_OFFSET_X": 20,             # Data object X offset from column center
+    "DATA_OFFSET_Y": 80,             # Data object Y offset from lane center (positive = below)
     "WAIT_TIME_MS": 50,              # Wait between unmask checks
     "MAX_ATTEMPTS": 3,               # Max unmask attempts
 }
