@@ -12,7 +12,7 @@
 #   - BUT: There may be a delay before elements are available
 #   - IF elements still missing: manual unmask INSIDE the correct lane
 #
-# Version: 2.2 - December 2025
+# Version: 2.4 - December 2025
 #
 
 from org.modelio.metamodel.bpmn.processCollaboration import BpmnProcess
@@ -241,41 +241,72 @@ def _createSequenceFlow(process, source, target, guard=""):
     return flow
 
 
-def _createDataAssociation(process, source, target, direction):
+def _createDataAssociation(process, source, target):
     """
     Create a BPMN Data Association (dotted arrow for data flow).
-    
+    Direction is auto-detected based on element types.
+
     Args:
         process: The BPMN process
-        source: Source element (task for output, data object for input)
-        target: Target element (data object for output, task for input)
-        direction: "input" (data->task) or "output" (task->data)
-    
+        source: Source element (task or data object)
+        target: Target element (task or data object)
+
     Returns:
         The created BpmnDataAssociation or None
-    
+
     BPMN Data Association Semantics:
         - OUTPUT (Task -> DataObject): StartingActivity = Task, TargetRef = DataObject
+          The association is owned by the activity (added to DataOutputAssociation list)
         - INPUT (DataObject -> Task): EndingActivity = Task, SourceRef = DataObject
+          The association is owned by the activity (added to DataInputAssociation list)
+    
+    IMPORTANT: The BpmnDataAssociation must be added to the activity's
+    DataInputAssociation or DataOutputAssociation list to establish proper
+    containment, otherwise Modelio will report an "orphan element" error.
     """
     if not _DATA_OBJECTS_AVAILABLE:
         print "ERROR: BpmnDataAssociation not available in this Modelio version"
         return None
-    
+
+    # Auto-detect direction based on element types
+    sourceIsData = isinstance(source, BpmnDataObject)
+    targetIsData = isinstance(target, BpmnDataObject)
+
+    if sourceIsData and targetIsData:
+        print "ERROR: Both source and target are DataObjects"
+        return None
+    if not sourceIsData and not targetIsData:
+        print "ERROR: Neither source nor target is a DataObject"
+        return None
+
     try:
         assoc = modelingSession.getModel().createBpmnDataAssociation()
-        
-        if direction == "input":
+
+        if sourceIsData:
             # Data flows INTO the activity (DataObject -> Task)
-            # source = data object, target = task
+            # This is a DataInputAssociation
             assoc.getSourceRef().add(source)   # SourceRef = DataObject
             assoc.setEndingActivity(target)    # EndingActivity = Task (receives data)
+            
+            # CRITICAL: Add to activity's DataInputAssociation list for proper containment
+            # This establishes the ownership relationship and prevents "orphan element" error
+            try:
+                target.getDataInputAssociation().add(assoc)
+            except Exception as e:
+                print "  Warning: Could not add to DataInputAssociation list: " + str(e)
         else:
             # Data flows OUT OF the activity (Task -> DataObject)
-            # source = task, target = data object
+            # This is a DataOutputAssociation
             assoc.setTargetRef(target)         # TargetRef = DataObject
             assoc.setStartingActivity(source)  # StartingActivity = Task (produces data)
-        
+            
+            # CRITICAL: Add to activity's DataOutputAssociation list for proper containment
+            # This establishes the ownership relationship and prevents "orphan element" error
+            try:
+                source.getDataOutputAssociation().add(assoc)
+            except Exception as e:
+                print "  Warning: Could not add to DataOutputAssociation list: " + str(e)
+
         return assoc
     except Exception as e:
         print "ERROR creating data association: " + str(e)
@@ -458,8 +489,8 @@ def createBPMNFromConfig(parentPackage, config):
         "layout": {"Name": column_index, ...},
         
         # Optional - Data Objects and Associations
-        "data_objects": [("DataName", "LaneName", column_index, "above|below"), ...],
-        "data_associations": [("SourceName", "TargetName", "input|output"), ...],
+        "data_objects": [("DataName", "LaneName", column_index), ...],
+        "data_associations": [("SourceName", "TargetName"), ...],
         
         # Optional overrides:
         "SPACING": 150, "START_X": 80, "TASK_WIDTH": 120, "TASK_HEIGHT": 60,
@@ -558,7 +589,7 @@ def createBPMNFromConfig(parentPackage, config):
     dataObjects = []
     dataObjectRefs = {}
     dataObjectLanes = {}
-    dataObjectLayout = {}  # name -> (column, position)
+    dataObjectLayout = {}  # name -> column
     
     if dataObjectDefs:
         print ""
@@ -566,8 +597,8 @@ def createBPMNFromConfig(parentPackage, config):
         print ""
         
         for dataDef in dataObjectDefs:
-            name, laneName, column, position = dataDef
-            
+            name, laneName, column = dataDef
+
             try:
                 dataObj = _createDataObject(process, name)
                 if dataObj:
@@ -576,7 +607,7 @@ def createBPMNFromConfig(parentPackage, config):
                     dataObjects.append(dataObj)
                     dataObjectRefs[name] = dataObj
                     dataObjectLanes[name] = laneName
-                    dataObjectLayout[name] = (column, position)
+                    dataObjectLayout[name] = column
                     # Also add to elementRefs for association lookups
                     elementRefs[name] = dataObj
                     elementLanes[name] = laneName
@@ -734,27 +765,24 @@ def createBPMNFromConfig(parentPackage, config):
             
             # Find data objects belonging to this lane
             laneDataCount = 0
-            for name, (column, position) in dataObjectLayout.items():
+            for name, column in dataObjectLayout.items():
                 if dataObjectLanes.get(name) != laneName:
                     continue
-                    
+
                 if name not in elementGraphics:
                     print "  " + name + ": SKIP (not in graphics)"
                     continue
-                
+
                 dg = elementGraphics[name]
-                
+
                 # X position: column position + horizontal offset
                 targetX = startX + spacing * column + dataOffsetX
-                
-                # Y position: CURRENT lane center + vertical offset
-                if position == "above":
-                    targetY = currentLaneCenterY - dataOffsetY
-                else:  # below
-                    targetY = currentLaneCenterY + dataOffsetY
-                
+
+                # Y position: CURRENT lane center + vertical offset (always below)
+                targetY = currentLaneCenterY + dataOffsetY
+
                 print "  " + name + " -> (" + str(int(targetX)) + "," + str(int(targetY)) + ")"
-                
+
                 newBounds = Draw2DRectangle(
                     int(targetX), int(targetY),
                     int(dataWidth), int(dataHeight)
@@ -802,19 +830,19 @@ def createBPMNFromConfig(parentPackage, config):
         print ""
         
         for assocDef in dataAssocDefs:
-            srcName, tgtName, direction = assocDef
-            
+            srcName, tgtName = assocDef[0], assocDef[1]
+
             src = elementRefs.get(srcName)
             tgt = elementRefs.get(tgtName)
-            
+
             if not src:
                 print "  ERROR: Source not found: " + srcName
                 continue
             if not tgt:
                 print "  ERROR: Target not found: " + tgtName
                 continue
-            
-            assoc = _createDataAssociation(process, src, tgt, direction)
+
+            assoc = _createDataAssociation(process, src, tgt)
             if assoc:
                 dataAssocs.append(assoc)
         

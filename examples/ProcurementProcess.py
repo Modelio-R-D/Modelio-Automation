@@ -71,30 +71,30 @@ CONFIG = {
         ("Returned",                END,          "Warehouse"),
     ],
     
-    # Data Objects: (name, lane, column, position)
+    # Data Objects: (name, lane, column)
     "data_objects": [
-        ("Purchase Request",  "Requester",   1, "below"),
-        ("Vendor Quotes",     "Procurement", 4, "below"),
-        ("Quote Analysis",    "Procurement", 5, "below"),
-        ("Purchase Order",    "Procurement", 9, "below"),
-        ("Delivery Note",     "Warehouse",  11, "below"),
-        ("Inspection Report", "Warehouse",  12, "below"),
+        ("Purchase Request",  "Requester",   1),
+        ("Vendor Quotes",     "Procurement", 4),
+        ("Quote Analysis",    "Procurement", 5),
+        ("Purchase Order",    "Procurement", 9),
+        ("Delivery Note",     "Warehouse",  11),
+        ("Inspection Report", "Warehouse",  12),
     ],
     
-    # Data Associations: (source, target, direction)
+    # Data Associations: (source, target) - direction auto-detected
     "data_associations": [
-        ("Submit Request",    "Purchase Request", "output"),
-        ("Purchase Request",  "Review Request",   "input"),
-        ("Receive Quotes",    "Vendor Quotes",    "output"),
-        ("Vendor Quotes",     "Compare Quotes",   "input"),
-        ("Compare Quotes",    "Quote Analysis",   "output"),
-        ("Quote Analysis",    "Select Vendor",    "input"),
-        ("Create PO",         "Purchase Order",   "output"),
-        ("Purchase Order",    "Send PO to Vendor","input"),
-        ("Receive Goods",     "Delivery Note",    "output"),
-        ("Delivery Note",     "Inspect Quality",  "input"),
-        ("Inspect Quality",   "Inspection Report","output"),
-        ("Inspection Report", "Confirm Receipt",  "input"),
+        ("Submit Request",    "Purchase Request"),
+        ("Purchase Request",  "Review Request"),
+        ("Receive Quotes",    "Vendor Quotes"),
+        ("Vendor Quotes",     "Compare Quotes"),
+        ("Compare Quotes",    "Quote Analysis"),
+        ("Quote Analysis",    "Select Vendor"),
+        ("Create PO",         "Purchase Order"),
+        ("Purchase Order",    "Send PO to Vendor"),
+        ("Receive Goods",     "Delivery Note"),
+        ("Delivery Note",     "Inspect Quality"),
+        ("Inspect Quality",   "Inspection Report"),
+        ("Inspection Report", "Confirm Receipt"),
     ],
     
     # Sequence Flows: (source, target, guard/label)

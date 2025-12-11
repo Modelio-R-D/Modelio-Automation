@@ -78,7 +78,7 @@ FINAL:    Save & Close
 
 **Operations:**
 1. Iterate through `config["data_objects"]`
-2. For each `(name, lane, column, position)` tuple:
+2. For each `(name, lane, column)` tuple:
    - Create `BpmnDataObject` via `_createDataObject()`
    - Assign to lane
    - Store in `dataObjectRefs`, `dataObjectLanes`, `dataObjectLayout`
@@ -194,7 +194,7 @@ FINAL:    Save & Close
    - Find all data objects in this lane
    - For each data object:
      - Calculate X: `START_X + SPACING × column + DATA_OFFSET_X`
-     - Calculate Y: `laneCenterY ± DATA_OFFSET_Y` (+ for below, - for above)
+     - Calculate Y: `laneCenterY + DATA_OFFSET_Y` (always below)
      - Set bounds with data object dimensions (default: 40×50)
    - **Save diagram** (triggers Modelio's lane auto-expansion)
 2. Re-reading lane Y after each lane handles Modelio pushing lanes down
@@ -248,12 +248,12 @@ FINAL:    Save & Close
 
 **Operations:**
 1. Iterate through `config["data_associations"]`
-2. For each `(source, target, direction)` tuple:
+2. For each `(source, target)` tuple:
    - Look up source and target in `elementRefs`
    - Create `BpmnDataAssociation`
-   - Set properties based on direction:
-     - **"output"** (Task → Data): `StartingActivity=source`, `TargetRef=target`
-     - **"input"** (Data → Task): `SourceRef=source`, `EndingActivity=target`
+   - Auto-detect direction based on element types:
+     - **Task → DataObject**: `StartingActivity=source`, `TargetRef=target`
+     - **DataObject → Task**: `SourceRef=source`, `EndingActivity=target`
 
 **Console Output:**
 ```
@@ -334,14 +334,15 @@ Data object phases insert at specific points:
 - `unmask(elem, 100, laneY)` succeeds - places inside lane
 
 ### Data Object Lane Expansion (v2.2)
-- Positioning data objects below/above tasks can extend beyond lane boundaries
+- Positioning data objects below tasks can extend beyond lane boundaries
 - Modelio auto-expands lanes to fit, pushing subsequent lanes down
 - Solution: Process lanes sequentially, re-read Y coordinates after each lane
 
 ### Data Association Semantics (v2.2)
 - BPMN requires specific property combinations for correct arrow direction
-- `output`: Task produces data → set `StartingActivity` + `TargetRef`
-- `input`: Task consumes data → set `SourceRef` + `EndingActivity`
+- Direction is auto-detected based on element types
+- Task → DataObject: set `StartingActivity` + `TargetRef`
+- DataObject → Task: set `SourceRef` + `EndingActivity`
 
 ---
 
@@ -353,10 +354,10 @@ Data object phases insert at specific points:
 | Elements in wrong positions | Phase 5 | Check layout dict column indices |
 | Elements overlap | Phase 5 | Ensure unique column indices per lane |
 | Data objects in wrong position | Phase 5B | Check DATA_OFFSET_X/Y values |
-| Data objects overlap tasks | Phase 5B | Increase DATA_OFFSET_Y or use "above" |
+| Data objects overlap tasks | Phase 5B | Increase DATA_OFFSET_Y |
 | Lanes pushed down unexpectedly | Phase 5B | Expected behavior - lane auto-expansion |
 | Flows missing | Phase 6 | Check source/target names match exactly |
-| Data association arrow wrong direction | Phase 6B | Verify "input" vs "output" direction |
+| Data association arrow wrong direction | Phase 6B | Verify source and target order |
 | Guard labels not showing | Phase 6 | Ensure flow tuple has 3 elements |
 
 ---

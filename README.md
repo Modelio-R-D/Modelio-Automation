@@ -153,8 +153,8 @@ CONFIG = {
         ("Expense Report", "Employee", 0, "below"),
     ],
     "data_associations": [
-        ("Submit Expense", "Expense Report", "output"),
-        ("Expense Report", "Review", "input"),
+        ("Submit Expense", "Expense Report"),
+        ("Expense Report", "Review"),
     ],
 }
 ```
@@ -199,8 +199,8 @@ CONFIG = {
     "layout": {...},
     
     # Optional - Data Objects (v2.1+)
-    "data_objects": [...],      # List of (name, lane, column, position)
-    "data_associations": [...], # List of (source, target, direction)
+    "data_objects": [...],      # List of (name, lane, column)
+    "data_associations": [...], # List of (source, target)
     
     # Optional - Layout Settings (with defaults)
     "SPACING": 150,        # Horizontal spacing between columns
@@ -219,10 +219,10 @@ CONFIG = {
 ### Data Objects Configuration
 
 ```python
-# Format: (name, lane, column, position)
+# Format: (name, lane, column)
 "data_objects": [
-    ("Draft Document", "Author", 1, "below"),
-    ("Final Report", "Reviewer", 3, "above"),
+    ("Draft Document", "Author", 1),
+    ("Final Report", "Reviewer", 3),
 ]
 ```
 
@@ -307,8 +307,8 @@ COMPLETE
 | Elements overlap | Increase `SPACING` or adjust column indices in layout |
 | Text doesn't fit | Increase `TASK_WIDTH` and `TASK_HEIGHT` |
 | Diagram is empty | Wait and refresh; check model tree for the process |
-| Data object overlaps task | Adjust `DATA_OFFSET_Y` or use `"above"` position |
-| Data association arrow wrong | Verify `"input"` vs `"output"` direction |
+| Data object overlaps task | Adjust `DATA_OFFSET_Y` configuration |
+| Data association arrow wrong | Verify source and target order |
 
 ---
 
@@ -337,6 +337,8 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## Version History
 
+- **v2.4** (Dec 2025) - Simplified data objects by removing position parameter (always below)
+- **v2.3** (Dec 2025) - Simplified data associations by auto-detecting direction
 - **v2.2** (Dec 2025) - Fixed Data Association semantics, lane-by-lane data object positioning
 - **v2.1** (Dec 2025) - Added Data Objects and Data Associations support
 - **v2.0** (Dec 2025) - Two-file architecture with helper library

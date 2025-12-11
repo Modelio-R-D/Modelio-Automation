@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.4] - December 2025
+
+### Changed
+- **Data objects simplified**: Removed `position` parameter - data objects are now always placed below the lane center
+  - Format changed from `(name, lane, column, "above|below")` to `(name, lane, column)`
+  - Simplifies configuration and provides consistent visual layout
+
+---
+
+## [v2.3] - December 2025
+
+### Changed
+- **Data associations simplified**: Removed `direction` parameter - now auto-detected based on element types
+  - Format changed from `(source, target, "input|output")` to `(source, target)`
+  - Direction is automatically determined: Task→DataObject or DataObject→Task
+
+---
+
 ## [v2.2] - December 2025
 
 ### Fixed
@@ -18,15 +36,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - **Data Objects**: New `DATA_OBJECT` element type for representing documents and data in processes
-- **Data Associations**: Connect tasks to data objects with `input`/`output` direction
-- `data_objects` configuration section: `(name, lane, column, position)`
-- `data_associations` configuration section: `(source, target, direction)`
+- **Data Associations**: Connect tasks to data objects
+- `data_objects` configuration section: `(name, lane, column)`
+- `data_associations` configuration section: `(source, target)`
 - New configuration options:
   - `DATA_WIDTH` (default: 40) - Width of data objects
   - `DATA_HEIGHT` (default: 50) - Height of data objects
   - `DATA_OFFSET_X` (default: 20) - X offset from column center
-  - `DATA_OFFSET_Y` (default: 80) - Y offset from lane center (positive = below)
-- Position option: `"above"` or `"below"` for data object placement relative to tasks
+  - `DATA_OFFSET_Y` (default: 80) - Y offset from lane center
 
 ### Documentation
 - Updated `CLAUDE_INSTRUCTIONS.md` to v2.1 with data object examples
@@ -148,23 +165,23 @@ The following versions used a single-file approach where all helper functions we
 
 ## Key Discoveries
 
-### Data Association Semantics (v2.2)
+### Data Association Semantics (v2.2+)
 
-BPMN data associations have specific semantics:
+BPMN data associations have specific semantics (auto-detected based on element types):
 
 | Direction | Arrow | BPMN Properties |
 |-----------|-------|-----------------|
-| `output` | Task → Data | `StartingActivity=Task`, `TargetRef=Data` |
-| `input` | Data → Task | `SourceRef=Data`, `EndingActivity=Task` |
+| Task → DataObject | Task produces data | `StartingActivity=Task`, `TargetRef=Data` |
+| DataObject → Task | Task consumes data | `SourceRef=Data`, `EndingActivity=Task` |
 
 Typical pattern for data flowing between tasks:
 ```
-Task A --(output)--> Data Object --(input)--> Task B
+Task A --> Data Object --> Task B
 ```
 
 ### Lane Expansion with Data Objects (v2.2)
 
-When data objects are positioned below/above tasks, they may extend beyond lane boundaries. Modelio auto-expands lanes to accommodate this, which shifts subsequent lanes down. Solution: position data objects lane-by-lane and re-read lane coordinates after each lane.
+When data objects are positioned below tasks, they may extend beyond lane boundaries. Modelio auto-expands lanes to accommodate this, which shifts subsequent lanes down. Solution: position data objects lane-by-lane and re-read lane coordinates after each lane.
 
 ### Auto-Unmask Behavior (v0.8.0)
 

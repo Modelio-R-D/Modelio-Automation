@@ -46,7 +46,7 @@ Data objects are configured separately using the `data_objects` section of CONFI
 
 ```python
 "data_objects": [
-    ("Document Name", "Lane Name", column_index, "above|below"),
+    ("Document Name", "Lane Name", column_index),
 ]
 ```
 
@@ -66,8 +66,8 @@ CONFIG = {
     "layout": {...},                 # Dict mapping element names to columns
     
     # OPTIONAL - Data Objects
-    "data_objects": [...],           # List of (name, lane, column, position) tuples
-    "data_associations": [...],      # List of (source, target, direction) tuples
+    "data_objects": [...],           # List of (name, lane, column) tuples
+    "data_associations": [...],      # List of (source, target) tuples
     
     # OPTIONAL - Layout Settings (defaults shown)
     "SPACING": 150,                  # Horizontal distance between columns (pixels)
@@ -163,13 +163,13 @@ Format: `{element_name: column_index}`
 
 ## Data Objects List
 
-Format: `(name, lane, column, position)`
+Format: `(name, lane, column)`
 
 ```python
 "data_objects": [
-    ("Draft Document", "Author", 1, "below"),
-    ("Final Report", "Author", 3, "below"),
-    ("Comments", "Reviewer", 2, "above"),
+    ("Draft Document", "Author", 1),
+    ("Final Report", "Author", 3),
+    ("Comments", "Reviewer", 2),
 ]
 ```
 
@@ -178,10 +178,9 @@ Format: `(name, lane, column, position)`
 | `name` | string | Unique identifier for the data object |
 | `lane` | string | Which lane to place it in |
 | `column` | integer | Horizontal position (typically same as related task) |
-| `position` | string | `"below"` or `"above"` relative to lane center |
 
 **Positioning notes**:
-- `"below"` is recommended for most cases (better visual flow)
+- Data objects are always placed below the lane center
 - Data objects are positioned lane-by-lane (top to bottom)
 - When data objects extend beyond lane boundaries, Modelio auto-expands the lane
 - The helper library re-reads lane coordinates after each lane's positioning
@@ -190,12 +189,12 @@ Format: `(name, lane, column, position)`
 
 ## Data Associations List
 
-Format: `(source, target, direction)`
+Format: `(source, target)` - direction is auto-detected based on element types.
 
 ```python
 "data_associations": [
-    ("Write Document", "Draft Document", "output"),  # Task produces data
-    ("Draft Document", "Review Task", "input"),      # Data consumed by task
+    ("Write Document", "Draft Document"),  # Task produces data
+    ("Draft Document", "Review Task"),     # Data consumed by task
 ]
 ```
 
@@ -203,20 +202,19 @@ Format: `(source, target, direction)`
 |-------|------|-------------|
 | `source` | string | Element or data object name |
 | `target` | string | Element or data object name |
-| `direction` | string | `"input"` or `"output"` |
 
-**BPMN Semantics**:
+**BPMN Semantics** (auto-detected):
 
-| Direction | Meaning | Internal Setting |
-|-----------|---------|------------------|
-| `"output"` | Task produces data | `StartingActivity = Task`, `TargetRef = DataObject` |
-| `"input"` | Task consumes data | `EndingActivity = Task`, `SourceRef = DataObject` |
+| Flow Direction | Internal Setting |
+|----------------|------------------|
+| Task → DataObject | `StartingActivity = Task`, `TargetRef = DataObject` |
+| DataObject → Task | `EndingActivity = Task`, `SourceRef = DataObject` |
 
 **Data Flow Pattern**:
 
 A typical data flow between tasks goes:
 ```
-Task A --(output)--> Data Object --(input)--> Task B
+Task A --> Data Object --> Task B
 ```
 
 This creates:
@@ -396,14 +394,14 @@ CONFIG = {
         ("End", END, "Reviewer"),
     ],
     "data_objects": [
-        ("Draft", "Author", 1, "below"),
-        ("Final Doc", "Author", 2, "below"),
+        ("Draft", "Author", 1),
+        ("Final Doc", "Author", 2),
     ],
     "data_associations": [
-        ("Write Document", "Draft", "output"),
-        ("Draft", "Submit", "input"),
-        ("Submit", "Final Doc", "output"),
-        ("Final Doc", "Review", "input"),
+        ("Write Document", "Draft"),
+        ("Draft", "Submit"),
+        ("Submit", "Final Doc"),
+        ("Final Doc", "Review"),
     ],
     "flows": [
         ("Start", "Write Document", ""),
@@ -478,14 +476,16 @@ COMPLETE: MyProcess_12345
 | Elements overlap | Use different column indices |
 | Flow not showing | Check source/target names match exactly |
 | Data association missing | Check element names in data_associations |
-| Data association arrow wrong | Verify "input" vs "output" direction |
-| Data object overlaps task | Adjust DATA_OFFSET_Y or use "above" |
+| Data association arrow wrong | Verify source and target order |
+| Data object overlaps task | Adjust DATA_OFFSET_Y configuration |
 | Guard not showing | Verify flow tuple has 3 elements |
 
 ---
 
 ## Version History
 
+- **v2.4** (December 2025): Simplified data objects by removing position parameter (always below)
+- **v2.3** (December 2025): Simplified data associations by auto-detecting direction
 - **v2.2** (December 2025): Fixed Data Association semantics, lane-by-lane data object positioning
 - **v2.1** (December 2025): Added Data Objects and Data Associations support
 - **v2.0** (December 2025): Configuration-based approach with two-file system

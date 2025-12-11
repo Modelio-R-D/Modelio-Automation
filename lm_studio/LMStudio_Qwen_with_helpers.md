@@ -1,5 +1,5 @@
 # LM Studio + Qwen Configuration for Modelio BPMN Scripts
-Complete Guide v5.1 (CONFIG-based with Data Objects)
+Complete Guide v5.2 (CONFIG-based with Data Objects)
 
 ---
 
@@ -57,13 +57,13 @@ CONFIG = {
     
     # Optional: Data Objects (documents/data in process)
     "data_objects": [
-        # ("DataName", "LaneName", column, "below" or "above"),
+        # ("DataName", "LaneName", column),
     ],
     
     # Optional: Data Associations (connect tasks to data)
     "data_associations": [
-        # ("TaskName", "DataName", "output"),  # Task produces data
-        # ("DataName", "TaskName", "input"),   # Task consumes data
+        # ("TaskName", "DataName"),  # Task produces data
+        # ("DataName", "TaskName"),  # Task consumes data
     ],
 }
 
@@ -86,15 +86,15 @@ ELEMENT TYPES (from library - use as-is, no quotes):
 - DATA_OBJECT - Document icon (data/document in process)
 
 DATA OBJECTS (optional):
-- Format: ("DataName", "LaneName", column, "below" or "above")
+- Format: ("DataName", "LaneName", column)
 - Place at same column as the task that produces it
-- "below" is recommended (better visual flow)
+- Data objects are always positioned below the lane center
 
 DATA ASSOCIATIONS (optional):
-- Format: ("Source", "Target", "direction")
-- "output": Task produces data (arrow: Task -> Data)
-- "input": Task consumes data (arrow: Data -> Task)
-- Pattern: Task A --(output)--> Data --(input)--> Task B
+- Format: ("Source", "Target") - direction is auto-detected
+- Task -> Data: arrow from task to data object
+- Data -> Task: arrow from data object to task
+- Pattern: Task A --> Data --> Task B
 
 CRITICAL RULES:
 1. Element types are constants (no quotes): START, USER_TASK, EXCLUSIVE_GW
@@ -103,21 +103,18 @@ CRITICAL RULES:
 4. End events have NO outgoing flows
 5. Names MUST match EXACTLY between elements, flows, layout, and data_associations
 6. Layout columns: 0 = leftmost, increment for each position
-7. Data associations use "input" or "output" (lowercase, no quotes around direction)
 
 WRONG:
 - ("Task", "USER_TASK", "Lane")  <-- quoted type
 - Gateway: "Approval Decision Gateway"
 - Guard: "(Guard: Approved)"
 - Flow: ("End", "Next", "")
-- ("Task", "Data", "OUTPUT")  <-- uppercase direction
 
 CORRECT:
 - ("Task", USER_TASK, "Lane")  <-- unquoted constant
 - Gateway: "Approved?"
 - Guard: "Approved"
 - End only receives flows
-- ("Task", "Data", "output")  <-- lowercase direction
 
 EXAMPLE WITH DATA OBJECTS:
 ```python
@@ -131,11 +128,11 @@ CONFIG = {
         ("End",      END,       "Reviewer"),
     ],
     "data_objects": [
-        ("Draft", "Author", 1, "below"),
+        ("Draft", "Author", 1),
     ],
     "data_associations": [
-        ("Write", "Draft", "output"),
-        ("Draft", "Review", "input"),
+        ("Write", "Draft"),
+        ("Draft", "Review"),
     ],
     "flows": [
         ("Start", "Write", ""),

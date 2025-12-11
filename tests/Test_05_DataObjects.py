@@ -34,28 +34,27 @@ CONFIG = {
         ("End",               END,       "Reviewer"),
     ],
     
-    # Data Objects: (name, lane, column, position)
-    # Place below the task that outputs them (same column as source task)
+    # Data Objects: (name, lane, column)
+    # Place at the same column as the task that outputs them
     "data_objects": [
-        ("Draft Document",     "Author",   1, "below"),   # Below Write Document
-        ("Submitted Document", "Author",   2, "below"),   # Below Submit for Review
-        ("Review Comments",    "Reviewer", 3, "below"),   # Below Review Document
+        ("Draft Document",     "Author",   1),   # Same column as Write Document
+        ("Submitted Document", "Author",   2),   # Same column as Submit for Review
+        ("Review Comments",    "Reviewer", 3),   # Same column as Review Document
     ],
     
-    # Data Associations: (source, target, direction)
-    # direction: "input" (data->task) or "output" (task->data)
+    # Data Associations: (source, target) - direction auto-detected
     "data_associations": [
         # Write produces draft, draft goes to Submit
-        ("Write Document",      "Draft Document",      "output"),
-        ("Draft Document",      "Submit for Review",   "input"),
-        
+        ("Write Document",      "Draft Document"),
+        ("Draft Document",      "Submit for Review"),
+
         # Submit produces submitted doc, goes to Review
-        ("Submit for Review",   "Submitted Document",  "output"),
-        ("Submitted Document",  "Review Document",     "input"),
-        
+        ("Submit for Review",   "Submitted Document"),
+        ("Submitted Document",  "Review Document"),
+
         # Review produces comments, comments go to Add Comments
-        ("Review Document",     "Review Comments",     "output"),
-        ("Review Comments",     "Add Comments",        "input"),
+        ("Review Document",     "Review Comments"),
+        ("Review Comments",     "Add Comments"),
     ],
     
     "flows": [

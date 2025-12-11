@@ -1,4 +1,4 @@
-# Modelio BPMN Macro Generation - Claude Instructions v2.2
+# Modelio BPMN Macro Generation - Claude Instructions v2.4
 
 ## Overview
 
@@ -9,9 +9,9 @@ You are helping users create BPMN process diagrams in Modelio using Jython macro
 1. **BPMN_Helpers.py** - Helper library (placed in Modelio macros folder)
 2. **Generated file** - Pure configuration + `execfile()` to load helpers
 
-**v2.2 Features**:
-- Data Objects with automatic lane expansion
-- Data Associations with correct BPMN semantics
+**v2.4 Features**:
+- Data Objects with automatic lane expansion (always positioned below lane center)
+- Data Associations with auto-detected direction based on element types
 - Lane-by-lane positioning for proper diagram layout
 
 ## Why Two Files?
@@ -116,8 +116,8 @@ CONFIG = {
     "layout": {...},                 # Dict of name -> column
     
     # Optional - Data Objects
-    "data_objects": [...],           # List of (name, lane, column, position)
-    "data_associations": [...],      # List of (source, target, direction)
+    "data_objects": [...],           # List of (name, lane, column)
+    "data_associations": [...],      # List of (source, target)
     
     # Optional layout settings (defaults shown)
     "SPACING": 150,                  # Horizontal spacing
@@ -176,7 +176,7 @@ CONFIG = {
 
 ```python
 "data_objects": [
-    ("Data Name", "Lane Name", column_index, "above|below"),
+    ("Data Name", "Lane Name", column_index),
     # ...
 ]
 ```
@@ -184,36 +184,32 @@ CONFIG = {
 - **Data Name**: Unique string for the data object
 - **Lane Name**: Which lane to place it in
 - **column_index**: Horizontal position (typically same column as the task that outputs it)
-- **position**: `"below"` (recommended) or `"above"` relative to lane center
 
-**Positioning Note**: Data objects are positioned lane-by-lane (top to bottom). When data objects extend beyond a lane's boundary, Modelio auto-expands the lane, pushing subsequent lanes down. The helper library handles this by re-reading lane coordinates after each lane's data objects are positioned.
+**Positioning Note**: Data objects are always placed below the lane center. They are positioned lane-by-lane (top to bottom). When data objects extend beyond a lane's boundary, Modelio auto-expands the lane, pushing subsequent lanes down. The helper library handles this by re-reading lane coordinates after each lane's data objects are positioned.
 
 ### Data Associations Format (Optional)
 
 ```python
 "data_associations": [
-    ("Source Name", "Target Name", "input|output"),
+    ("Source Name", "Target Name"),
     # ...
 ]
 ```
 
-- **Source/Target**: Element or data object names
-- **direction**:
-  - `"output"`: Task produces data (Task → Data Object)
-  - `"input"`: Task consumes data (Data Object → Task)
+- **Source/Target**: Element or data object names (direction is auto-detected based on element types)
 
-**BPMN Semantics**:
-- OUTPUT: Sets `StartingActivity = Task`, `TargetRef = DataObject`
-- INPUT: Sets `EndingActivity = Task`, `SourceRef = DataObject`
+**BPMN Semantics** (auto-detected):
+- Task → DataObject: Sets `StartingActivity = Task`, `TargetRef = DataObject`
+- DataObject → Task: Sets `EndingActivity = Task`, `SourceRef = DataObject`
 
 **Data Flow Pattern**: A typical data flow goes:
 ```
-Task A --(output)--> Data Object --(input)--> Task B
+Task A --> Data Object --> Task B
 ```
 
 This means:
-1. Task A produces the data object (output association, arrow from Task A to Data Object)
-2. The data object is consumed by Task B (input association, arrow from Data Object to Task B)
+1. Task A produces the data object (arrow from Task A to Data Object)
+2. The data object is consumed by Task B (arrow from Data Object to Task B)
 
 ---
 
@@ -292,9 +288,9 @@ CONFIG = {
 ```python
 CONFIG = {
     "name": "DocumentReview",
-    
+
     "lanes": ["Author", "Reviewer"],
-    
+
     "elements": [
         ("Start",           START,     "Author"),
         ("Write Document",  USER_TASK, "Author"),
@@ -303,26 +299,26 @@ CONFIG = {
         ("Add Comments",    USER_TASK, "Reviewer"),
         ("End",             END,       "Reviewer"),
     ],
-    
-    # Data Objects: (name, lane, column, position)
-    # Place below the task that outputs them (same column)
+
+    # Data Objects: (name, lane, column)
+    # Place at the same column as the task that outputs them
     "data_objects": [
-        ("Draft",     "Author",   1, "below"),  # Below Write Document
-        ("Final Doc", "Author",   2, "below"),  # Below Submit
-        ("Comments",  "Reviewer", 3, "below"),  # Below Review
+        ("Draft",     "Author",   1),  # Same column as Write Document
+        ("Final Doc", "Author",   2),  # Same column as Submit
+        ("Comments",  "Reviewer", 3),  # Same column as Review
     ],
-    
-    # Data Associations: (source, target, direction)
+
+    # Data Associations: (source, target)
     # Pattern: Task outputs data, data inputs to next task
     "data_associations": [
-        ("Write Document", "Draft",        "output"),  # Task produces data
-        ("Draft",          "Submit",       "input"),   # Data consumed by task
-        ("Submit",         "Final Doc",    "output"),
-        ("Final Doc",      "Review",       "input"),
-        ("Review",         "Comments",     "output"),
-        ("Comments",       "Add Comments", "input"),
+        ("Write Document", "Draft"),        # Task produces data
+        ("Draft",          "Submit"),       # Data consumed by task
+        ("Submit",         "Final Doc"),
+        ("Final Doc",      "Review"),
+        ("Review",         "Comments"),
+        ("Comments",       "Add Comments"),
     ],
-    
+
     "flows": [
         ("Start",          "Write Document", ""),
         ("Write Document", "Submit",         ""),
@@ -330,7 +326,7 @@ CONFIG = {
         ("Review",         "Add Comments",   ""),
         ("Add Comments",   "End",            ""),
     ],
-    
+
     "layout": {
         "Start":          0,
         "Write Document": 1,
@@ -356,8 +352,8 @@ CONFIG = {
 | Elements overlap | Use different column indices |
 | Flow not showing | Check source/target names match exactly |
 | Data association missing | Check element names in data_associations |
-| Data association arrow wrong direction | Verify "input" vs "output" direction is correct |
-| Data object overlaps task | Adjust DATA_OFFSET_Y or use "above" position |
+| Data association arrow wrong direction | Verify source and target order is correct |
+| Data object overlaps task | Adjust DATA_OFFSET_Y configuration |
 | Data object outside lane | Handled automatically by lane-by-lane positioning |
 | Guard not showing | Verify flow tuple has 3 elements: (src, tgt, guard) |
 
@@ -398,7 +394,9 @@ When generating a process file, include this note:
 
 ## Version History
 
-- v2.2 (Dec 2025): Fixed Data Association semantics (StartingActivity/EndingActivity), lane-by-lane data object positioning
+- v2.4 (Dec 2025): Simplified data objects by removing position parameter (always below)
+- v2.3 (Dec 2025): Simplified data associations by auto-detecting direction
+- v2.2 (Dec 2025): Fixed Data Association semantics, lane-by-lane positioning
 - v2.1 (Dec 2025): Added Data Objects and Data Associations
 - v2.0 (Dec 2025): Two-file approach with helper library separation
 - v0.9.x and earlier: Single-file approach (archived in v1/ directory)
